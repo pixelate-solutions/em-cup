@@ -82,14 +82,16 @@ export function AdminMatchEditDialog({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent>
-        <DrawerHeader>
+      <DrawerContent className="max-h-[calc(100dvh-1rem)]">
+        <DrawerHeader className="shrink-0 px-4 pb-3 pt-4">
           <DrawerTitle>{getMatchDisplayName(match)}</DrawerTitle>
           <DrawerDescription>
             Edit players, date played, location, winner, and notes.
           </DrawerDescription>
         </DrawerHeader>
-        <div className="overflow-y-auto px-4 pb-6">{content}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
+          {content}
+        </div>
       </DrawerContent>
     </Drawer>
   );
@@ -151,7 +153,7 @@ function AdminMatchEditForm({
   };
 
   return (
-    <div className="space-y-5">
+    <div className="flex min-h-0 flex-col gap-5">
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Player 1">
           <PlayerSelect
@@ -213,14 +215,16 @@ function AdminMatchEditForm({
         <Textarea
           value={details}
           onChange={(event) => setDetails(event.target.value)}
-          className="min-h-28 rounded-xl border-slate-300 bg-white"
+          className="min-h-24 rounded-xl border-slate-300 bg-white"
           placeholder="Optional match notes"
         />
       </Field>
 
-      <Button type="button" className="w-full rounded-xl" disabled={isPending} onClick={save}>
-        {isPending ? "Saving..." : "Save match"}
-      </Button>
+      <div className="sticky bottom-0 -mx-4 border-t border-slate-200 bg-white/95 px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 backdrop-blur">
+        <Button type="button" className="w-full rounded-xl" disabled={isPending} onClick={save}>
+          {isPending ? "Saving..." : "Save match"}
+        </Button>
+      </div>
     </div>
   );
 }
