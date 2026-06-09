@@ -33,6 +33,9 @@ Set:
 ```bash
 DATABASE_URL="postgresql://USER:PASSWORD@HOST.neon.tech/emcup?sslmode=require"
 ADMIN_PASSWORD="emcup-2026"
+GHIN_USERNAME="your-ghin-login"
+GHIN_PASSWORD="your-ghin-password"
+GHIN_REFRESH_SECRET="change-me"
 ```
 
 ## Neon Database
@@ -88,6 +91,9 @@ Admin login:
 3. Add environment variables:
    - `DATABASE_URL`
    - `ADMIN_PASSWORD`
+   - `GHIN_USERNAME`
+   - `GHIN_PASSWORD`
+   - `GHIN_REFRESH_SECRET` or `CRON_SECRET`
 4. Deploy.
 5. Run migrations against the production Neon database:
 
@@ -119,9 +125,24 @@ npm run db:seed
 When an admin sets a winner:
 
 1. The match winner and loser are stored.
-2. The match is marked completed.
-3. The winner is placed into the configured next match slot.
-4. If an earlier winner changes, dependent downstream results are cleared to prevent impossible bracket states.
-5. Public and admin pages are revalidated.
+2. The current GHIN handicaps for both players are refreshed when available.
+3. The resolved handicap values are stored on the match as the match snapshot.
+4. The match is marked completed.
+5. The winner is placed into the configured next match slot.
+6. If an earlier winner changes, dependent downstream results are cleared to prevent impossible bracket states.
+
+Public and admin pages are revalidated after admin changes.
+
+## GHIN Handicap Sync
+
+GHIN credentials are used server-side only. Players can be matched by GHIN number, or by tournament player name, state, and country when a GHIN number is not available. The matcher includes common first-name aliases such as Jim/James, Mike/Michael, Joey/Joseph, and CJ/Christopher.
+
+Handicaps refresh in three places:
+
+- Admin players page: refresh one player or all players.
+- Match result logging: refreshes both players before storing the match result.
+- Scheduled route: `/api/ghin/refresh`, configured in `vercel.json` to run daily.
+
+The scheduled route requires `Authorization: Bearer <GHIN_REFRESH_SECRET>` or `Authorization: Bearer <CRON_SECRET>`. GHIN historical lookup is not exposed by the unofficial endpoint used here, so completed matches store the handicap available at the time the result is recorded. Admins can override either player's stored handicap in the match editor.
 
 The admin session is stored in a secure httpOnly cookie. The password is read from `ADMIN_PASSWORD` and is not editable in the UI.

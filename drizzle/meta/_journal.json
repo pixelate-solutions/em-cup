@@ -22,6 +22,20 @@
       "when": 1781024759300,
       "tag": "0002_round_1_label",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1781035283919,
+      "tag": "0003_ghin_handicap_sync",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1781037552372,
+      "tag": "0004_remove_ghin_name_fields",
+      "breakpoints": true
     }
   ]
 }

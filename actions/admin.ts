@@ -9,14 +9,22 @@ import { db } from "@/db";
 import { matches, players, prizes, tournamentSettings } from "@/db/schema";
 import { clearDownstreamResults, propagateWinner } from "@/lib/bracket-server";
 import { isAdminAuthenticated } from "@/lib/auth";
+import {
+  refreshAllPlayerHandicaps,
+  refreshPlayerHandicapById,
+  resolveCurrentHandicapsForPlayers,
+} from "@/lib/ghin";
 
 const nullableInt = z.union([z.number().int().positive(), z.null()]);
 const nullableString = z.union([z.string(), z.null()]);
+const nullableHandicap = z.union([z.string().trim(), z.null()]).optional();
 
 const matchDetailsSchema = z.object({
   matchId: z.string().min(1),
   player1Id: nullableInt,
   player2Id: nullableInt,
+  player1HandicapIndex: nullableHandicap,
+  player2HandicapIndex: nullableHandicap,
   scheduledAt: z.string().nullable(),
   location: nullableString,
   details: nullableString,
@@ -30,12 +38,18 @@ const winnerSchema = z.object({
 
 const clearMatchSchema = z.object({
   matchId: z.string().min(1),
+  player1HandicapIndex: nullableHandicap,
+  player2HandicapIndex: nullableHandicap,
 });
 
 const playerSchema = z.object({
   id: z.number().int().positive(),
   name: z.string().trim().min(1, "Player name is required"),
   handicapIndex: z.string().nullable(),
+  ghinNumber: z.string().nullable().optional(),
+  ghinState: z.string().nullable().optional(),
+  ghinCountry: z.string().nullable().optional(),
+  ghinAutoSync: z.boolean().optional(),
   hasPaid: z.boolean(),
   notes: z.string().nullable(),
 });
@@ -55,6 +69,10 @@ const settingSchema = z.object({
   value: z.string(),
 });
 
+const refreshPlayerSchema = z.object({
+  playerId: z.number().int().positive(),
+});
+
 async function requireAdmin() {
   if (!(await isAdminAuthenticated())) {
     redirect("/admin/login");
@@ -68,6 +86,8 @@ function revalidateApp() {
 export async function updateMatchDetailsAction(input: z.infer<typeof matchDetailsSchema>) {
   await requireAdmin();
   const data = matchDetailsSchema.parse(input);
+  const player1HandicapIndex = normalizeHandicapInput(data.player1HandicapIndex);
+  const player2HandicapIndex = normalizeHandicapInput(data.player2HandicapIndex);
 
   await db.transaction(async (tx) => {
     const [match] = await tx.select().from(matches).where(eq(matches.id, data.matchId)).limit(1);
@@ -93,8 +113,8 @@ export async function updateMatchDetailsAction(input: z.infer<typeof matchDetail
         status: currentWinnerInvalid ? (data.scheduledAt ? "scheduled" : "pending") : data.status,
         winnerId: currentWinnerInvalid ? null : match.winnerId,
         loserId: currentWinnerInvalid ? null : match.loserId,
-        player1HandicapIndex: currentWinnerInvalid ? null : match.player1HandicapIndex,
-        player2HandicapIndex: currentWinnerInvalid ? null : match.player2HandicapIndex,
+        player1HandicapIndex,
+        player2HandicapIndex,
         updatedAt: new Date(),
       })
       .where(eq(matches.id, data.matchId));
@@ -108,6 +128,38 @@ export async function setMatchWinnerAction(input: z.infer<typeof winnerSchema>) 
   await requireAdmin();
   const data = winnerSchema.parse(input);
 
+  const [matchBefore] = await db.select().from(matches).where(eq(matches.id, data.matchId)).limit(1);
+  if (!matchBefore) throw new Error("Match not found");
+
+  if (data.winnerId !== matchBefore.player1Id && data.winnerId !== matchBefore.player2Id) {
+    throw new Error("Winner must be one of the match players");
+  }
+
+  const loserId = data.winnerId === matchBefore.player1Id ? matchBefore.player2Id : matchBefore.player1Id;
+  if (!loserId) throw new Error("Cannot complete a match until both players are set");
+
+  const matchPlayerIds = [matchBefore.player1Id, matchBefore.player2Id].filter(
+    (id): id is number => id != null,
+  );
+  const matchPlayers = await db
+    .select()
+    .from(players)
+    .where(inArray(players.id, matchPlayerIds));
+  const playerById = new Map(matchPlayers.map((player) => [player.id, player]));
+  const player1 = matchBefore.player1Id ? playerById.get(matchBefore.player1Id) : null;
+  const player2 = matchBefore.player2Id ? playerById.get(matchBefore.player2Id) : null;
+  let refreshedHandicaps = new Map<number, string | null>();
+
+  try {
+    const idsToRefresh = [
+      matchBefore.player1HandicapIndex == null ? matchBefore.player1Id : null,
+      matchBefore.player2HandicapIndex == null ? matchBefore.player2Id : null,
+    ].filter((id): id is number => id != null);
+    refreshedHandicaps = await resolveCurrentHandicapsForPlayers(idsToRefresh);
+  } catch {
+    refreshedHandicaps = new Map();
+  }
+
   await db.transaction(async (tx) => {
     const [match] = await tx.select().from(matches).where(eq(matches.id, data.matchId)).limit(1);
     if (!match) throw new Error("Match not found");
@@ -116,17 +168,8 @@ export async function setMatchWinnerAction(input: z.infer<typeof winnerSchema>) 
       throw new Error("Winner must be one of the match players");
     }
 
-    const loserId = data.winnerId === match.player1Id ? match.player2Id : match.player1Id;
-    if (!loserId) throw new Error("Cannot complete a match until both players are set");
-
-    const matchPlayerIds = [match.player1Id, match.player2Id].filter((id): id is number => id != null);
-    const matchPlayers = await tx
-      .select()
-      .from(players)
-      .where(inArray(players.id, matchPlayerIds));
-    const playerById = new Map(matchPlayers.map((player) => [player.id, player]));
-    const player1 = match.player1Id ? playerById.get(match.player1Id) : null;
-    const player2 = match.player2Id ? playerById.get(match.player2Id) : null;
+    const nextLoserId = data.winnerId === match.player1Id ? match.player2Id : match.player1Id;
+    if (!nextLoserId) throw new Error("Cannot complete a match until both players are set");
 
     if (match.winnerId && match.winnerId !== data.winnerId) {
       await clearDownstreamResults(tx, match, match.winnerId);
@@ -136,9 +179,17 @@ export async function setMatchWinnerAction(input: z.infer<typeof winnerSchema>) 
       .update(matches)
       .set({
         winnerId: data.winnerId,
-        loserId,
-        player1HandicapIndex: player1?.handicapIndex ?? null,
-        player2HandicapIndex: player2?.handicapIndex ?? null,
+        loserId: nextLoserId,
+        player1HandicapIndex:
+          match.player1HandicapIndex ??
+          (match.player1Id ? refreshedHandicaps.get(match.player1Id) : null) ??
+          player1?.handicapIndex ??
+          null,
+        player2HandicapIndex:
+          match.player2HandicapIndex ??
+          (match.player2Id ? refreshedHandicaps.get(match.player2Id) : null) ??
+          player2?.handicapIndex ??
+          null,
         status: "completed",
         updatedAt: new Date(),
       })
@@ -154,6 +205,8 @@ export async function setMatchWinnerAction(input: z.infer<typeof winnerSchema>) 
 export async function clearMatchResultAction(input: z.infer<typeof clearMatchSchema>) {
   await requireAdmin();
   const data = clearMatchSchema.parse(input);
+  const player1HandicapIndex = normalizeHandicapInput(data.player1HandicapIndex);
+  const player2HandicapIndex = normalizeHandicapInput(data.player2HandicapIndex);
 
   await db.transaction(async (tx) => {
     const [match] = await tx.select().from(matches).where(eq(matches.id, data.matchId)).limit(1);
@@ -166,8 +219,8 @@ export async function clearMatchResultAction(input: z.infer<typeof clearMatchSch
       .set({
         winnerId: null,
         loserId: null,
-        player1HandicapIndex: null,
-        player2HandicapIndex: null,
+        player1HandicapIndex,
+        player2HandicapIndex,
         status: match.scheduledAt ? "scheduled" : "pending",
         updatedAt: new Date(),
       })
@@ -182,21 +235,50 @@ export async function updatePlayerAction(input: z.infer<typeof playerSchema>) {
   await requireAdmin();
   const data = playerSchema.parse(input);
 
-  const handicap = data.handicapIndex && data.handicapIndex.trim() !== "" ? data.handicapIndex : null;
+  const handicap = normalizeHandicapInput(data.handicapIndex);
+  const patch: Partial<typeof players.$inferInsert> = {
+    name: data.name,
+    handicapIndex: handicap,
+    hasPaid: data.hasPaid,
+    notes: data.notes || null,
+    updatedAt: new Date(),
+  };
+
+  if (data.ghinNumber !== undefined) patch.ghinNumber = normalizeNullableString(data.ghinNumber);
+  if (data.ghinState !== undefined) patch.ghinState = normalizeNullableString(data.ghinState)?.toUpperCase() ?? null;
+  if (data.ghinCountry !== undefined) patch.ghinCountry = normalizeNullableString(data.ghinCountry)?.toUpperCase() ?? "US";
+  if (data.ghinAutoSync !== undefined) patch.ghinAutoSync = data.ghinAutoSync;
 
   await db
     .update(players)
-    .set({
-      name: data.name,
-      handicapIndex: handicap,
-      hasPaid: data.hasPaid,
-      notes: data.notes || null,
-      updatedAt: new Date(),
-    })
+    .set(patch)
     .where(eq(players.id, data.id));
 
   revalidateApp();
   return { ok: true };
+}
+
+export async function refreshPlayerHandicapAction(input: z.infer<typeof refreshPlayerSchema>) {
+  await requireAdmin();
+  const data = refreshPlayerSchema.parse(input);
+  const result = await refreshPlayerHandicapById(data.playerId);
+
+  revalidateApp();
+  return result;
+}
+
+export async function refreshAllHandicapsAction() {
+  await requireAdmin();
+  const results = await refreshAllPlayerHandicaps();
+
+  revalidateApp();
+  return {
+    ok: true,
+    total: results.length,
+    updated: results.filter((result) => result.ok).length,
+    failed: results.filter((result) => !result.ok).length,
+    results,
+  };
 }
 
 export async function updatePaymentAction(input: z.infer<typeof paymentSchema>) {
@@ -239,4 +321,19 @@ export async function updateSettingAction(input: z.infer<typeof settingSchema>) 
 
   revalidateApp();
   return { ok: true };
+}
+
+function normalizeHandicapInput(value: string | null | undefined) {
+  if (value == null || value.trim() === "") return null;
+  const parsed = Number(value.replace(/[^\d.-]/g, ""));
+  if (!Number.isFinite(parsed)) throw new Error("Handicap must be a number");
+  if (Math.abs(parsed) > 54) {
+    throw new Error("Handicap index must be between -54.0 and 54.0. Put GHIN numbers in the GHIN # field.");
+  }
+  return parsed.toFixed(1);
+}
+
+function normalizeNullableString(value: string | null | undefined) {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
 }

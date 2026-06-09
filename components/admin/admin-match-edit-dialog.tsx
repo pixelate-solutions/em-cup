@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
 
@@ -24,7 +24,6 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
-import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -60,7 +59,6 @@ export function AdminMatchEditDialog({
       key={match.id}
       match={match}
       players={players}
-      onSaved={() => onOpenChange(false)}
     />
   );
 
@@ -100,11 +98,9 @@ export function AdminMatchEditDialog({
 function AdminMatchEditForm({
   match,
   players,
-  onSaved,
 }: {
   match: MatchWithPlayers;
   players: Player[];
-  onSaved: () => void;
 }) {
   const [player1Id, setPlayer1Id] = useState(toSelectValue(match.player1Id));
   const [player2Id, setPlayer2Id] = useState(toSelectValue(match.player2Id));
@@ -112,45 +108,108 @@ function AdminMatchEditForm({
   const [datePlayed, setDatePlayed] = useState<Date | undefined>(
     match.scheduledAt ? new Date(match.scheduledAt) : undefined,
   );
+  const [player1HandicapIndex, setPlayer1HandicapIndex] = useState(match.player1HandicapIndex ?? "");
+  const [player2HandicapIndex, setPlayer2HandicapIndex] = useState(match.player2HandicapIndex ?? "");
   const [location, setLocation] = useState(match.location ?? "");
   const [details, setDetails] = useState(match.details ?? "");
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
+  const lastSavedRef = useRef({
+    player1Id,
+    player2Id,
+    winnerId,
+    datePlayed: datePlayed ? toDateOnlyDateTime(datePlayed) : null,
+    player1HandicapIndex: String(player1HandicapIndex),
+    player2HandicapIndex: String(player2HandicapIndex),
+    location: location.trim(),
+    details: details.trim(),
+  });
+  const debounceRef = useRef<number | null>(null);
 
   const winnerOptions = useMemo(() => {
     const ids = [player1Id, player2Id].filter((id) => id !== noneValue);
     return players.filter((player) => ids.includes(String(player.id)));
   }, [player1Id, player2Id, players]);
 
-  const save = () => {
-    startTransition(async () => {
-      try {
-        const nextWinnerId = winnerId === player1Id || winnerId === player2Id ? fromSelectValue(winnerId) : null;
-        const player1Changed = fromSelectValue(player1Id) !== match.player1Id;
-        const player2Changed = fromSelectValue(player2Id) !== match.player2Id;
-        const participantsChanged = player1Changed || player2Changed;
-        await updateMatchDetailsAction({
-          matchId: match.id,
-          player1Id: fromSelectValue(player1Id),
-          player2Id: fromSelectValue(player2Id),
-          scheduledAt: datePlayed ? toDateOnlyDateTime(datePlayed) : null,
-          location: location.trim() || null,
-          details: details.trim() || null,
-          status: nextWinnerId ? "completed" : datePlayed ? "scheduled" : "pending",
-        });
+  useEffect(() => {
+    const next = {
+      player1Id,
+      player2Id,
+      winnerId: winnerId === player1Id || winnerId === player2Id ? winnerId : noneValue,
+      datePlayed: datePlayed ? toDateOnlyDateTime(datePlayed) : null,
+      player1HandicapIndex: player1HandicapIndex.toString().trim(),
+      player2HandicapIndex: player2HandicapIndex.toString().trim(),
+      location: location.trim(),
+      details: details.trim(),
+    };
 
-        if (nextWinnerId && (nextWinnerId !== match.winnerId || participantsChanged)) {
-          await setMatchWinnerAction({ matchId: match.id, winnerId: nextWinnerId });
-        } else if (!nextWinnerId && match.winnerId) {
-          await clearMatchResultAction({ matchId: match.id });
+    const lastSaved = lastSavedRef.current;
+    if (
+      next.player1Id === lastSaved.player1Id &&
+      next.player2Id === lastSaved.player2Id &&
+      next.winnerId === lastSaved.winnerId &&
+      next.datePlayed === lastSaved.datePlayed &&
+      next.player1HandicapIndex === lastSaved.player1HandicapIndex &&
+      next.player2HandicapIndex === lastSaved.player2HandicapIndex &&
+      next.location === lastSaved.location &&
+      next.details === lastSaved.details
+    ) {
+      return;
+    }
+
+    debounceRef.current = window.setTimeout(() => {
+      startTransition(async () => {
+        try {
+          const nextWinnerId = fromSelectValue(next.winnerId);
+          const previousWinnerId = fromSelectValue(lastSavedRef.current.winnerId);
+          const participantsChanged =
+            next.player1Id !== lastSavedRef.current.player1Id ||
+            next.player2Id !== lastSavedRef.current.player2Id;
+
+          await updateMatchDetailsAction({
+            matchId: match.id,
+            player1Id: fromSelectValue(next.player1Id),
+            player2Id: fromSelectValue(next.player2Id),
+            player1HandicapIndex: next.player1HandicapIndex || null,
+            player2HandicapIndex: next.player2HandicapIndex || null,
+            scheduledAt: next.datePlayed,
+            location: next.location || null,
+            details: next.details || null,
+            status: nextWinnerId ? "completed" : next.datePlayed ? "scheduled" : "pending",
+          });
+
+          if (nextWinnerId && (nextWinnerId !== previousWinnerId || participantsChanged)) {
+            await setMatchWinnerAction({ matchId: match.id, winnerId: nextWinnerId });
+          } else if (!nextWinnerId && previousWinnerId) {
+            await clearMatchResultAction({
+              matchId: match.id,
+              player1HandicapIndex: next.player1HandicapIndex || null,
+              player2HandicapIndex: next.player2HandicapIndex || null,
+            });
+          }
+
+          lastSavedRef.current = next;
+        } catch (error) {
+          toast.error(error instanceof Error ? error.message : "Unable to update match");
         }
+      });
+    }, 500);
 
-        toast.success("Match updated");
-        onSaved();
-      } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Unable to update match");
+    return () => {
+      if (debounceRef.current != null) {
+        window.clearTimeout(debounceRef.current);
       }
-    });
-  };
+    };
+  }, [
+    player1Id,
+    player2Id,
+    winnerId,
+    datePlayed,
+    player1HandicapIndex,
+    player2HandicapIndex,
+    location,
+    details,
+    match.id,
+  ]);
 
   return (
     <div className="flex min-h-0 flex-col gap-5">
@@ -195,6 +254,27 @@ function AdminMatchEditForm({
         </Field>
       </div>
 
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Player 1 handicap">
+          <input
+            value={player1HandicapIndex}
+            onChange={(event) => setPlayer1HandicapIndex(event.target.value)}
+            className="flex h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            inputMode="decimal"
+            placeholder={match.player1?.handicapIndex != null ? Number(match.player1.handicapIndex).toFixed(1) : "GHIN/current"}
+          />
+        </Field>
+        <Field label="Player 2 handicap">
+          <input
+            value={player2HandicapIndex}
+            onChange={(event) => setPlayer2HandicapIndex(event.target.value)}
+            className="flex h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            inputMode="decimal"
+            placeholder={match.player2?.handicapIndex != null ? Number(match.player2.handicapIndex).toFixed(1) : "GHIN/current"}
+          />
+        </Field>
+      </div>
+
       <Field label="Winner">
         <Select value={winnerId} onValueChange={setWinnerId}>
           <SelectTrigger className="rounded-xl border-slate-300 bg-white">
@@ -220,11 +300,6 @@ function AdminMatchEditForm({
         />
       </Field>
 
-      <div className="sticky bottom-0 z-20 -mx-4 border-t border-slate-200 bg-white px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 shadow-[0_-8px_18px_rgba(255,255,255,0.92)] after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-24 after:bg-white">
-        <Button type="button" className="relative z-10 w-full rounded-xl" disabled={isPending} onClick={save}>
-          {isPending ? "Saving..." : "Save match"}
-        </Button>
-      </div>
     </div>
   );
 }
