@@ -1,65 +1,95 @@
 import Image from "next/image";
+import Link from "next/link";
+import { CalendarCheck, CircleDollarSign, Users, Trophy } from "lucide-react";
 
-export default function Home() {
+import { DeadlineTimeline } from "@/components/deadline-timeline";
+import { PrizeCard } from "@/components/prize-card";
+import { StatCard } from "@/components/stat-card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ACTUAL_PAYMENT_COPY, PRIZE_COPY, SITE_SUBTITLE } from "@/lib/constants";
+import { getTournamentData } from "@/lib/data";
+
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const { players, matches, prizes } = await getTournamentData();
+  const completedMatches = matches.filter((match) => match.status === "completed").length;
+  const champion = matches.find((match) => match.id === "F1")?.winner;
+  const previousWinners = players.filter((player) => player.isPreviousWinner).sort((a, b) => b.previousWins - a.previousWins);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div className="golf-surface">
+      <section className="mx-auto grid max-w-7xl gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[1fr_460px] lg:px-8 lg:py-12">
+        <div className="flex flex-col justify-center">
+          <Image src="/em-logo.png" alt="Electro-Matic logo" width={230} height={58} className="mb-6 h-auto w-56" priority />
+          <Badge className="w-fit bg-white text-primary shadow-sm">{SITE_SUBTITLE}</Badge>
+          <h1 className="mt-5 max-w-3xl text-5xl font-bold tracking-normal text-primary sm:text-6xl">EM Cup</h1>
+          <p className="mt-5 max-w-2xl text-lg leading-8 text-muted-foreground">
+            Live bracket, match deadlines, player handicaps, results, payouts, and Blue Jacket tracking for the Electro-Matic golf tournament.
           </p>
+          <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+            <Button asChild size="lg">
+              <Link href="/bracket">View Bracket</Link>
+            </Button>
+            <Button asChild variant="outline" size="lg">
+              <Link href="/players">View Players</Link>
+            </Button>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        <div className="liquid-glass relative aspect-[1.62] min-h-80 overflow-hidden rounded-[2rem] border border-white/70 p-3 shadow-2xl">
+          <Image
+            src="/images/em-cup-bracket.png"
+            alt="EM Cup official bracket artwork"
+            fill
+            className="object-contain p-3"
+            priority
+          />
         </div>
-      </main>
+      </section>
+
+      <section className="mx-auto grid max-w-7xl gap-4 px-4 pb-8 sm:grid-cols-2 sm:px-6 lg:grid-cols-4 lg:px-8">
+        <StatCard label="Players" value={players.length} icon={Users} />
+        <StatCard label="Matches Completed" value={`${completedMatches}/${matches.length}`} icon={CalendarCheck} />
+        <StatCard label="Buy-In" value="$100" icon={CircleDollarSign} />
+        <StatCard label="Champion" value={champion?.name ?? "TBD"} icon={Trophy} />
+      </section>
+
+      <section className="mx-auto grid max-w-7xl gap-6 px-4 pb-12 sm:px-6 lg:grid-cols-[1fr_1fr] lg:px-8">
+        <div className="space-y-6">
+          <DeadlineTimeline />
+          <Card>
+            <CardHeader>
+              <CardTitle>Blue Jacket</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm text-muted-foreground">
+              <p>{ACTUAL_PAYMENT_COPY}</p>
+              <p>{PRIZE_COPY}</p>
+            </CardContent>
+          </Card>
+        </div>
+        <div className="space-y-6">
+          <div className="grid gap-3 sm:grid-cols-2">
+            {prizes.slice(0, 4).map((prize) => (
+              <PrizeCard key={prize.id} prize={prize} />
+            ))}
+          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Previous Winners</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-2 sm:grid-cols-2">
+              {previousWinners.map((winner) => (
+                <div key={winner.id} className="flex items-center justify-between rounded-2xl border border-white/70 bg-white/60 px-3 py-2 backdrop-blur">
+                  <span className="font-medium">{winner.name}</span>
+                  <Badge variant="outline">{winner.previousWins}x</Badge>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+      </section>
     </div>
   );
 }

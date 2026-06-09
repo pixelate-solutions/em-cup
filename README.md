@@ -1,36 +1,127 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# EM Cup
 
-## Getting Started
+Electro-Matic Golf Tournament official live bracket site built with Next.js App Router, React, TypeScript, Tailwind CSS, shadcn-style UI components, Neon Postgres, Drizzle ORM, Zod, and Server Actions.
 
-First, run the development server:
+## Stack
+
+- Next.js `16.2.7`
+- React `19.2.7`
+- TypeScript
+- Tailwind CSS `4`
+- shadcn/ui-compatible local components in `components/ui`
+- Neon Postgres
+- Drizzle ORM and Drizzle Kit
+- Zod validation
+- Server Actions for admin mutations
+
+## Setup
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Create local environment variables:
+
+```bash
+cp .env.example .env.local
+```
+
+Set:
+
+```bash
+DATABASE_URL="postgresql://USER:PASSWORD@HOST.neon.tech/emcup?sslmode=require"
+ADMIN_PASSWORD="emcup-2026"
+```
+
+## Neon Database
+
+1. Create a Neon project at https://neon.tech.
+2. Create or select a database for the tournament.
+3. Copy the pooled or direct Postgres connection string.
+4. Paste it into `.env.local` as `DATABASE_URL`.
+
+## Migrations
+
+Generate migrations after schema changes:
+
+```bash
+npm run db:generate
+```
+
+Apply migrations to Neon:
+
+```bash
+npm run db:migrate
+```
+
+The initial migration is already included in `drizzle/`.
+
+## Seed Data
+
+Seed the complete EM Cup bracket, players, previous winners, prizes, deadlines, and tournament settings:
+
+```bash
+npm run db:seed
+```
+
+The seed script resets tournament tables before inserting the official bracket.
+
+## Run Locally
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Admin login:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- URL: `/admin/login`
+- Default password: `emcup-2026`
 
-## Learn More
+## Deploy to Vercel
 
-To learn more about Next.js, take a look at the following resources:
+1. Push this repository to GitHub.
+2. Import the repo in Vercel.
+3. Add environment variables:
+   - `DATABASE_URL`
+   - `ADMIN_PASSWORD`
+4. Deploy.
+5. Run migrations against the production Neon database:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm run db:migrate
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+6. Seed the production database once, if needed:
 
-## Deploy on Vercel
+```bash
+npm run db:seed
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Routes
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `/` Home dashboard
+- `/bracket` Public live bracket
+- `/players` Public player list
+- `/rules` Rules, payouts, deadlines, and Blue Jacket details
+- `/admin/login` Admin login
+- `/admin` Admin overview and settings
+- `/admin/matches` Match editing and winner propagation
+- `/admin/players` Player handicap, payment, notes, and status tools
+- `/admin/payments` Payment tracking for all 25 players
+- `/admin/prizes` Prize assignment
+
+## Admin Behavior
+
+When an admin sets a winner:
+
+1. The match winner and loser are stored.
+2. The match is marked completed.
+3. The winner is placed into the configured next match slot.
+4. If an earlier winner changes, dependent downstream results are cleared to prevent impossible bracket states.
+5. Public and admin pages are revalidated.
+
+The admin session is stored in a secure httpOnly cookie. The password is read from `ADMIN_PASSWORD` and is not editable in the UI.
