@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import type { ReactNode } from "react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -113,6 +114,7 @@ function AdminMatchEditForm({
   const [location, setLocation] = useState(match.location ?? "");
   const [details, setDetails] = useState(match.details ?? "");
   const [, startTransition] = useTransition();
+  const [saveStatus, setSaveStatus] = useState("");
   const lastSavedRef = useRef({
     player1Id,
     player2Id,
@@ -124,11 +126,34 @@ function AdminMatchEditForm({
     details: details.trim(),
   });
   const debounceRef = useRef<number | null>(null);
+  const statusTimeoutRef = useRef<number | null>(null);
+  const statusMinUntilRef = useRef(0);
 
   const winnerOptions = useMemo(() => {
     const ids = [player1Id, player2Id].filter((id) => id !== noneValue);
     return players.filter((player) => ids.includes(String(player.id)));
   }, [player1Id, player2Id, players]);
+
+  function showStatus(message: string, minimumMs = 0) {
+    if (statusTimeoutRef.current != null) {
+      window.clearTimeout(statusTimeoutRef.current);
+    }
+
+    statusMinUntilRef.current = Math.max(statusMinUntilRef.current, Date.now() + minimumMs);
+    setSaveStatus(message);
+  }
+
+  function finishStatus() {
+    const remainingMs = Math.max(0, statusMinUntilRef.current - Date.now());
+    if (statusTimeoutRef.current != null) {
+      window.clearTimeout(statusTimeoutRef.current);
+    }
+
+    statusTimeoutRef.current = window.setTimeout(() => {
+      setSaveStatus("Saved");
+      statusTimeoutRef.current = window.setTimeout(() => setSaveStatus(""), 1200);
+    }, remainingMs);
+  }
 
   useEffect(() => {
     const next = {
@@ -164,6 +189,11 @@ function AdminMatchEditForm({
           const participantsChanged =
             next.player1Id !== lastSavedRef.current.player1Id ||
             next.player2Id !== lastSavedRef.current.player2Id;
+          const shouldSetWinner = Boolean(
+            nextWinnerId && (nextWinnerId !== previousWinnerId || participantsChanged),
+          );
+
+          showStatus(shouldSetWinner ? "Updating handicaps..." : "Saving...", shouldSetWinner ? 1800 : 0);
 
           await updateMatchDetailsAction({
             matchId: match.id,
@@ -177,8 +207,16 @@ function AdminMatchEditForm({
             status: nextWinnerId ? "completed" : next.datePlayed ? "scheduled" : "pending",
           });
 
-          if (nextWinnerId && (nextWinnerId !== previousWinnerId || participantsChanged)) {
-            await setMatchWinnerAction({ matchId: match.id, winnerId: nextWinnerId });
+          if (shouldSetWinner && nextWinnerId) {
+            const result = await setMatchWinnerAction({ matchId: match.id, winnerId: nextWinnerId });
+            if (!next.player1HandicapIndex && result.player1HandicapIndex != null) {
+              setPlayer1HandicapIndex(result.player1HandicapIndex);
+              next.player1HandicapIndex = result.player1HandicapIndex;
+            }
+            if (!next.player2HandicapIndex && result.player2HandicapIndex != null) {
+              setPlayer2HandicapIndex(result.player2HandicapIndex);
+              next.player2HandicapIndex = result.player2HandicapIndex;
+            }
           } else if (!nextWinnerId && previousWinnerId) {
             await clearMatchResultAction({
               matchId: match.id,
@@ -188,7 +226,9 @@ function AdminMatchEditForm({
           }
 
           lastSavedRef.current = next;
+          finishStatus();
         } catch (error) {
+          setSaveStatus("");
           toast.error(error instanceof Error ? error.message : "Unable to update match");
         }
       });
@@ -211,8 +251,20 @@ function AdminMatchEditForm({
     match.id,
   ]);
 
+  useEffect(() => {
+    return () => {
+      if (statusTimeoutRef.current != null) {
+        window.clearTimeout(statusTimeoutRef.current);
+      }
+    };
+  }, []);
+
   return (
     <div className="flex min-h-0 flex-col gap-5">
+      {saveStatus ? (
+        <MatchSaveStatus message={saveStatus} />
+      ) : null}
+
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Player 1">
           <PlayerSelect
@@ -276,7 +328,15 @@ function AdminMatchEditForm({
       </div>
 
       <Field label="Winner">
-        <Select value={winnerId} onValueChange={setWinnerId}>
+        <Select
+          value={winnerId}
+          onValueChange={(value) => {
+            if (value !== noneValue) {
+              showStatus("Updating handicaps...", 1800);
+            }
+            setWinnerId(value);
+          }}
+        >
           <SelectTrigger className="rounded-xl border-slate-300 bg-white">
             <SelectValue placeholder="Select winner" />
           </SelectTrigger>
@@ -309,6 +369,23 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
     <div className="space-y-2">
       <Label className="text-sm font-bold text-slate-700">{label}</Label>
       {children}
+    </div>
+  );
+}
+
+function MatchSaveStatus({ message }: { message: string }) {
+  const saved = message === "Saved";
+  return (
+    <div
+      className={
+        saved
+          ? "flex items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-800"
+          : "flex items-center justify-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-950 shadow-sm"
+      }
+      aria-live="polite"
+    >
+      {saved ? null : <Loader2 className="h-4 w-4 animate-spin" />}
+      {message}
     </div>
   );
 }

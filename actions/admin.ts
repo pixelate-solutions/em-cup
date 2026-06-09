@@ -151,14 +151,12 @@ export async function setMatchWinnerAction(input: z.infer<typeof winnerSchema>) 
   let refreshedHandicaps = new Map<number, string | null>();
 
   try {
-    const idsToRefresh = [
-      matchBefore.player1HandicapIndex == null ? matchBefore.player1Id : null,
-      matchBefore.player2HandicapIndex == null ? matchBefore.player2Id : null,
-    ].filter((id): id is number => id != null);
-    refreshedHandicaps = await resolveCurrentHandicapsForPlayers(idsToRefresh);
+    refreshedHandicaps = await resolveCurrentHandicapsForPlayers(matchPlayerIds);
   } catch {
     refreshedHandicaps = new Map();
   }
+  let storedPlayer1HandicapIndex: string | null = null;
+  let storedPlayer2HandicapIndex: string | null = null;
 
   await db.transaction(async (tx) => {
     const [match] = await tx.select().from(matches).where(eq(matches.id, data.matchId)).limit(1);
@@ -175,21 +173,24 @@ export async function setMatchWinnerAction(input: z.infer<typeof winnerSchema>) 
       await clearDownstreamResults(tx, match, match.winnerId);
     }
 
+    storedPlayer1HandicapIndex =
+      match.player1HandicapIndex ??
+      (match.player1Id ? refreshedHandicaps.get(match.player1Id) : null) ??
+      player1?.handicapIndex ??
+      null;
+    storedPlayer2HandicapIndex =
+      match.player2HandicapIndex ??
+      (match.player2Id ? refreshedHandicaps.get(match.player2Id) : null) ??
+      player2?.handicapIndex ??
+      null;
+
     await tx
       .update(matches)
       .set({
         winnerId: data.winnerId,
         loserId: nextLoserId,
-        player1HandicapIndex:
-          match.player1HandicapIndex ??
-          (match.player1Id ? refreshedHandicaps.get(match.player1Id) : null) ??
-          player1?.handicapIndex ??
-          null,
-        player2HandicapIndex:
-          match.player2HandicapIndex ??
-          (match.player2Id ? refreshedHandicaps.get(match.player2Id) : null) ??
-          player2?.handicapIndex ??
-          null,
+        player1HandicapIndex: storedPlayer1HandicapIndex,
+        player2HandicapIndex: storedPlayer2HandicapIndex,
         status: "completed",
         updatedAt: new Date(),
       })
@@ -199,7 +200,11 @@ export async function setMatchWinnerAction(input: z.infer<typeof winnerSchema>) 
   });
 
   revalidateApp();
-  return { ok: true };
+  return {
+    ok: true,
+    player1HandicapIndex: storedPlayer1HandicapIndex,
+    player2HandicapIndex: storedPlayer2HandicapIndex,
+  };
 }
 
 export async function clearMatchResultAction(input: z.infer<typeof clearMatchSchema>) {
