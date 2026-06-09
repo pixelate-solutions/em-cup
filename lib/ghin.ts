@@ -477,7 +477,7 @@ function selectBestGolfer(
   name: { firstName: string; lastName: string; suffix: string | null },
 ) {
   if (candidates.length === 0) {
-    throw new Error("No GHIN match found");
+    throw new Error("No GHIN found");
   }
 
   const firstNames = new Set(firstNameCandidates(name.firstName).map(normalizeName));
@@ -505,10 +505,10 @@ function selectBestGolfer(
     }
 
     if (constrainedMatches.length === 0) {
-      throw new Error(`No GHIN match found in ${desiredState}`);
+      throw new Error(`No GHIN found in ${desiredState}`);
     }
 
-    throw new Error(`Multiple GHIN matches found in ${desiredState}; add GHIN number`);
+    throw new Error(`Multiple GHINs found in ${desiredState}; add GHIN number`);
   }
 
   if (suffix) {
@@ -533,11 +533,11 @@ function selectBestGolfer(
   const best = scored[0];
   const second = scored[1];
   if (!best || best.score < 80) {
-    throw new Error("No confident GHIN match found");
+    throw new Error("No confident GHIN found");
   }
 
   if (second && best.score === second.score) {
-    throw new Error("Multiple GHIN matches found; add GHIN number or state");
+    throw new Error("Multiple GHINs found; add GHIN number or state");
   }
 
   return best.golfer;
