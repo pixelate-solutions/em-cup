@@ -12,7 +12,7 @@ export default async function PlayersPage() {
         <div>
           <h1 className="text-3xl font-bold text-primary">Players</h1>
           <p className="mt-2 max-w-2xl text-muted-foreground">
-            Player list with handicap indexes, payment status, prior winners, and current tournament status.
+            Player list with handicap indexes, payment tracking, and matches won.
           </p>
         </div>
         <PlayersList players={players} matches={matches} />

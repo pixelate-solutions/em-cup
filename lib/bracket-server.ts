@@ -39,6 +39,8 @@ export async function clearDownstreamResults(tx: Tx, match: Match, oldWinnerId: 
   ) {
     patch.winnerId = null;
     patch.loserId = null;
+    patch.player1HandicapIndex = null;
+    patch.player2HandicapIndex = null;
     patch.status = nextMatch.scheduledAt ? "scheduled" : "pending";
   }
 

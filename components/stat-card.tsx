@@ -12,15 +12,15 @@ export function StatCard({
   icon?: LucideIcon;
 }) {
   return (
-    <Card>
-      <CardContent className="flex items-center justify-between gap-4 p-5">
+    <Card className="rounded-2xl shadow-sm">
+      <CardContent className="flex items-center justify-between gap-4 p-4">
         <div>
-          <p className="text-sm text-muted-foreground">{label}</p>
-          <p className="mt-1 text-2xl font-semibold text-primary">{value}</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
+          <p className="mt-1 text-2xl font-bold text-primary">{value}</p>
         </div>
         {Icon ? (
-          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-            <Icon className="h-5 w-5" />
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/8 text-primary">
+            <Icon className="h-4 w-4" />
           </span>
         ) : null}
       </CardContent>

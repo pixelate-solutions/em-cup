@@ -46,6 +46,8 @@ export const matches = pgTable("matches", {
   player2Id: integer("player2_id").references(() => players.id, {
     onDelete: "set null",
   }),
+  player1HandicapIndex: numeric("player1_handicap_index", { precision: 4, scale: 1 }),
+  player2HandicapIndex: numeric("player2_handicap_index", { precision: 4, scale: 1 }),
   winnerId: integer("winner_id").references(() => players.id, {
     onDelete: "set null",
   }),

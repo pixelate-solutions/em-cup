@@ -18,9 +18,14 @@ import {
 } from "@/components/ui/drawer";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { StatusBadge } from "@/components/status-badge";
 import { useMediaQuery } from "@/hooks/use-media-query";
-import { calculateHandicapStrokes, getMatchDisplayName, getSlotDisplay } from "@/lib/bracket-utils";
+import {
+  calculateHandicapStrokes,
+  getMatchDisplayName,
+  getMatchHandicapParticipants,
+  getMatchSlotHandicap,
+  getSlotDisplay,
+} from "@/lib/bracket-utils";
 import type { MatchWithPlayers } from "@/lib/types";
 import { formatDate, formatDateTime } from "@/lib/utils";
 
@@ -36,7 +41,8 @@ export function MatchDetails({
   const isDesktop = useMediaQuery("(min-width: 768px)");
   if (!match) return null;
 
-  const handicap = calculateHandicapStrokes(match.player1, match.player2);
+  const participants = getMatchHandicapParticipants(match);
+  const handicap = calculateHandicapStrokes(participants.player1, participants.player2);
   const content = <MatchDetailsContent match={match} handicapMessage={handicap.message} />;
 
   if (isDesktop) {
@@ -45,7 +51,7 @@ export function MatchDetails({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{getMatchDisplayName(match)}</DialogTitle>
-            <DialogDescription>Match details, handicap strokes, status, and result.</DialogDescription>
+            <DialogDescription>Match details, handicap strokes, schedule, and result.</DialogDescription>
           </DialogHeader>
           {content}
         </DialogContent>
@@ -58,7 +64,7 @@ export function MatchDetails({
       <DrawerContent>
         <DrawerHeader>
           <DrawerTitle>{getMatchDisplayName(match)}</DrawerTitle>
-          <DrawerDescription>Match details, handicap strokes, status, and result.</DrawerDescription>
+          <DrawerDescription>Match details, handicap strokes, schedule, and result.</DrawerDescription>
         </DrawerHeader>
         <div className="overflow-y-auto px-4 pb-6">{content}</div>
       </DrawerContent>
@@ -79,13 +85,14 @@ function MatchDetailsContent({
         {(["player1", "player2"] as const).map((slot) => {
           const player = slot === "player1" ? match.player1 : match.player2;
           const isWinner = player?.id === match.winnerId;
+          const handicap = getMatchSlotHandicap(match, slot);
 
           return (
             <div key={slot} className="flex items-center justify-between gap-3 rounded-2xl border border-white/70 bg-white/60 p-3 backdrop-blur">
               <div>
                 <p className="font-medium">{player?.name ?? getSlotDisplay(match, slot)}</p>
                 <p className="text-sm text-muted-foreground">
-                  Handicap {player?.handicapIndex != null ? Number(player.handicapIndex).toFixed(1) : "TBD"}
+                  Handicap {handicap != null ? Number(handicap).toFixed(1) : "TBD"}
                 </p>
               </div>
               {isWinner ? (
@@ -103,17 +110,13 @@ function MatchDetailsContent({
 
       <div className="grid gap-3 text-sm">
         <div className="flex items-center justify-between gap-3">
-          <span className="text-muted-foreground">Status</span>
-          <StatusBadge status={match.status} />
-        </div>
-        <div className="flex items-center justify-between gap-3">
           <span className="text-muted-foreground">Handicap strokes</span>
           <span className="text-right font-medium">{handicapMessage}</span>
         </div>
         <div className="flex items-center justify-between gap-3">
           <span className="flex items-center gap-2 text-muted-foreground">
             <Calendar className="h-4 w-4" />
-            Scheduled
+            Date
           </span>
           <span className="text-right font-medium">{formatDateTime(match.scheduledAt)}</span>
         </div>

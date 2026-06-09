@@ -1,5 +1,5 @@
 export const SITE_NAME = "EM Cup";
-export const SITE_SUBTITLE = "Electro-Matic Golf Tournament • Official Bracket";
+export const SITE_SUBTITLE = "Electro-Matic Golf Tournament";
 export const BUY_IN_AMOUNT = 100;
 export const PAYMENT_COPY = "$100 buy-in for Round of 16 players";
 export const ACTUAL_PAYMENT_COPY = "$100 buy-in for all 25 players";

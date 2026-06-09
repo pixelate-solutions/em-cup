@@ -1,6 +1,6 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -34,6 +34,7 @@ const clearMatchSchema = z.object({
 
 const playerSchema = z.object({
   id: z.number().int().positive(),
+  name: z.string().trim().min(1, "Player name is required"),
   handicapIndex: z.string().nullable(),
   hasPaid: z.boolean(),
   notes: z.string().nullable(),
@@ -73,8 +74,9 @@ export async function updateMatchDetailsAction(input: z.infer<typeof matchDetail
     if (!match) throw new Error("Match not found");
 
     const nextPlayerIds = [data.player1Id, data.player2Id].filter(Boolean);
+    const playersChanged = match.player1Id !== data.player1Id || match.player2Id !== data.player2Id;
     const currentWinnerInvalid =
-      match.winnerId != null && !nextPlayerIds.includes(match.winnerId);
+      match.winnerId != null && (playersChanged || !nextPlayerIds.includes(match.winnerId));
 
     if (currentWinnerInvalid) {
       await clearDownstreamResults(tx, match, match.winnerId);
@@ -91,6 +93,8 @@ export async function updateMatchDetailsAction(input: z.infer<typeof matchDetail
         status: currentWinnerInvalid ? (data.scheduledAt ? "scheduled" : "pending") : data.status,
         winnerId: currentWinnerInvalid ? null : match.winnerId,
         loserId: currentWinnerInvalid ? null : match.loserId,
+        player1HandicapIndex: currentWinnerInvalid ? null : match.player1HandicapIndex,
+        player2HandicapIndex: currentWinnerInvalid ? null : match.player2HandicapIndex,
         updatedAt: new Date(),
       })
       .where(eq(matches.id, data.matchId));
@@ -115,6 +119,15 @@ export async function setMatchWinnerAction(input: z.infer<typeof winnerSchema>) 
     const loserId = data.winnerId === match.player1Id ? match.player2Id : match.player1Id;
     if (!loserId) throw new Error("Cannot complete a match until both players are set");
 
+    const matchPlayerIds = [match.player1Id, match.player2Id].filter((id): id is number => id != null);
+    const matchPlayers = await tx
+      .select()
+      .from(players)
+      .where(inArray(players.id, matchPlayerIds));
+    const playerById = new Map(matchPlayers.map((player) => [player.id, player]));
+    const player1 = match.player1Id ? playerById.get(match.player1Id) : null;
+    const player2 = match.player2Id ? playerById.get(match.player2Id) : null;
+
     if (match.winnerId && match.winnerId !== data.winnerId) {
       await clearDownstreamResults(tx, match, match.winnerId);
     }
@@ -124,6 +137,8 @@ export async function setMatchWinnerAction(input: z.infer<typeof winnerSchema>) 
       .set({
         winnerId: data.winnerId,
         loserId,
+        player1HandicapIndex: player1?.handicapIndex ?? null,
+        player2HandicapIndex: player2?.handicapIndex ?? null,
         status: "completed",
         updatedAt: new Date(),
       })
@@ -151,6 +166,8 @@ export async function clearMatchResultAction(input: z.infer<typeof clearMatchSch
       .set({
         winnerId: null,
         loserId: null,
+        player1HandicapIndex: null,
+        player2HandicapIndex: null,
         status: match.scheduledAt ? "scheduled" : "pending",
         updatedAt: new Date(),
       })
@@ -170,6 +187,7 @@ export async function updatePlayerAction(input: z.infer<typeof playerSchema>) {
   await db
     .update(players)
     .set({
+      name: data.name,
       handicapIndex: handicap,
       hasPaid: data.hasPaid,
       notes: data.notes || null,

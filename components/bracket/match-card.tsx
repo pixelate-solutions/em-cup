@@ -1,24 +1,19 @@
 "use client";
 
-import { Trophy } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
-import { HandicapDisplay } from "@/components/handicap-display";
-import { PlayerBadge } from "@/components/player-badge";
-import { StatusBadge } from "@/components/status-badge";
+import { getMatchSlotHandicap, getSlotDisplay } from "@/lib/bracket-utils";
 import type { MatchWithPlayers } from "@/lib/types";
-import { cn, formatDate } from "@/lib/utils";
-import { getSlotDisplay } from "@/lib/bracket-utils";
+import { cn } from "@/lib/utils";
 
 export function MatchCard({
   match,
   onSelect,
-  compact = false,
 }: {
   match: MatchWithPlayers;
   onSelect: (match: MatchWithPlayers) => void;
   compact?: boolean;
+  showConnector?: boolean;
 }) {
   const playerRows = [
     { slot: "player1" as const, player: match.player1 },
@@ -30,55 +25,60 @@ export function MatchCard({
       type="button"
       onClick={() => onSelect(match)}
       className="w-full cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      aria-label={`Open details for ${match.id}`}
+      aria-label={`Open details for ${match.roundLabel} ${match.id}`}
     >
-      <Card
+      <div
         className={cn(
-          "overflow-hidden border-primary/15 transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-xl",
-          match.status === "completed" && "border-emerald-300 bg-emerald-50/70",
+          "relative overflow-visible rounded-md border border-slate-300 bg-white text-foreground shadow-none transition hover:border-primary/50 hover:bg-slate-50",
+          match.status === "completed" && "border-primary/40",
         )}
       >
-        <div className="flex items-center justify-between gap-2 border-b bg-white/45 px-3 py-2">
-          <div className="flex min-w-0 items-center gap-2">
-            <span className="text-xs font-semibold text-primary">{match.id}</span>
-            <span className="truncate text-xs text-muted-foreground">{match.roundLabel}</span>
-          </div>
-          <StatusBadge status={match.status} />
-        </div>
-        <div className={cn("space-y-2 p-3", compact && "p-2")}>
-          {playerRows.map(({ slot, player }) => {
-            const isWinner = match.winnerId && player?.id === match.winnerId;
-            const isLoser = match.loserId && player?.id === match.loserId;
+        <span className="pointer-events-none absolute -right-1.5 -top-3 z-10 rounded bg-slate-100 px-1 text-[9px] font-bold text-primary/70">
+          {match.id}
+        </span>
+        {playerRows.map(({ slot, player }, index) => {
+          const isWinner = Boolean(match.winnerId && player?.id === match.winnerId);
+          const isLoser = Boolean(match.loserId && player?.id === match.loserId);
+          const label = player?.name ?? shortSlotLabel(getSlotDisplay(match, slot));
+          const handicap = getMatchSlotHandicap(match, slot);
 
-            return (
-              <div
-                key={slot}
+          return (
+            <div
+              key={slot}
+              className={cn(
+                "flex h-8 items-center justify-between gap-1.5 px-2.5 text-sm",
+                index === 0 && "border-b border-slate-200",
+                !player && "bg-slate-50 text-slate-400",
+                isWinner && "bg-blue-50 font-bold text-primary",
+                isLoser && "text-muted-foreground",
+              )}
+            >
+              <span
                 className={cn(
-                  "flex min-h-10 items-center justify-between gap-2 rounded-2xl border border-white/70 bg-white/58 px-3 py-2 backdrop-blur",
-                  isWinner && "border-emerald-300 bg-white/85",
-                  !player && "border-dashed",
-                  isLoser && "opacity-55",
+                  "min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap pr-1",
+                  !player && "font-medium italic",
                 )}
               >
-                <div className="min-w-0">
-                  {player ? (
-                    <PlayerBadge player={player} muted={Boolean(isLoser)} />
-                  ) : (
-                    <span className="text-sm font-medium text-muted-foreground">{getSlotDisplay(match, slot)}</span>
-                  )}
-                  {player ? <div><HandicapDisplay player={player} /></div> : null}
-                </div>
-                {isWinner ? <Trophy className="h-4 w-4 shrink-0 text-emerald-600" /> : null}
-              </div>
-            );
-          })}
-          <div className="flex items-center justify-between gap-2 pt-1">
-            <Badge variant="outline" className="font-normal">
-              Deadline {formatDate(match.deadline)}
-            </Badge>
-          </div>
-        </div>
-      </Card>
+                {label}
+              </span>
+              <span className="flex shrink-0 items-center gap-1">
+                {handicap != null ? (
+                  <span className="text-[10px] font-semibold text-muted-foreground">
+                    {Number(handicap).toFixed(1)}
+                  </span>
+                ) : null}
+                {isWinner ? <CheckCircle2 className="h-3.5 w-3.5 text-primary" /> : null}
+              </span>
+            </div>
+          );
+        })}
+      </div>
     </button>
   );
+}
+
+function shortSlotLabel(value: string) {
+  if (value === "TBD") return "TBD";
+  if (value.startsWith("Winner of ")) return `${value.replace("Winner of ", "")} Winner`;
+  return value;
 }

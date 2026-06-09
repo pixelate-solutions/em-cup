@@ -1,13 +1,11 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
-import { Gift, Save } from "lucide-react";
+import { Gift } from "lucide-react";
 import { toast } from "sonner";
 
 import { updatePrizeAction } from "@/actions/admin";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Player } from "@/db/schema";
@@ -45,9 +43,23 @@ export function AdminPrizeEditor({
 }
 
 function PrizeEditorCard({ prize, players }: { prize: PrizeWithWinner; players: Player[] }) {
-  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [selected, setSelected] = useState(prize.winnerPlayerId?.toString() ?? none);
+
+  function updateSelected(value: string) {
+    setSelected(value);
+    startTransition(async () => {
+      try {
+        await updatePrizeAction({
+          prizeId: prize.id,
+          winnerPlayerId: value === none ? null : Number(value),
+        });
+      } catch (error) {
+        setSelected(prize.winnerPlayerId?.toString() ?? none);
+        toast.error(error instanceof Error ? error.message : "Prize update failed");
+      }
+    });
+  }
 
   return (
     <Card>
@@ -60,7 +72,7 @@ function PrizeEditorCard({ prize, players }: { prize: PrizeWithWinner; players: 
       <CardContent className="space-y-3">
         <p className="text-2xl font-semibold text-primary">{formatCurrency(prize.amount)}</p>
         {prize.description ? <p className="text-sm text-muted-foreground">{prize.description}</p> : null}
-        <Select value={selected} onValueChange={setSelected}>
+        <Select value={selected} onValueChange={updateSelected} disabled={isPending}>
           <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value={none}>TBD</SelectItem>
@@ -69,27 +81,6 @@ function PrizeEditorCard({ prize, players }: { prize: PrizeWithWinner; players: 
             ))}
           </SelectContent>
         </Select>
-        <Button
-          type="button"
-          disabled={isPending}
-          onClick={() => {
-            startTransition(async () => {
-              try {
-                await updatePrizeAction({
-                  prizeId: prize.id,
-                  winnerPlayerId: selected === none ? null : Number(selected),
-                });
-                toast.success("Prize updated");
-                router.refresh();
-              } catch (error) {
-                toast.error(error instanceof Error ? error.message : "Prize update failed");
-              }
-            });
-          }}
-        >
-          <Save className="h-4 w-4" />
-          Save prize
-        </Button>
       </CardContent>
     </Card>
   );

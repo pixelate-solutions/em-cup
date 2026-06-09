@@ -3,13 +3,11 @@
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PaymentStatusBadge, PreviousWinnerBadge } from "@/components/player-badge";
+import { PaymentStatusBadge } from "@/components/player-badge";
 import type { Player } from "@/db/schema";
-import { getPlayerTournamentStatus } from "@/lib/bracket-utils";
 import type { MatchWithPlayers } from "@/lib/types";
 
 export function PlayersList({
@@ -24,6 +22,14 @@ export function PlayersList({
     () => players.filter((player) => player.name.toLowerCase().includes(query.toLowerCase())),
     [players, query],
   );
+  const winsByPlayerId = useMemo(() => {
+    const wins = new Map<number, number>();
+    for (const match of matches) {
+      if (!match.winnerId) continue;
+      wins.set(match.winnerId, (wins.get(match.winnerId) ?? 0) + 1);
+    }
+    return wins;
+  }, [matches]);
 
   return (
     <div className="space-y-4">
@@ -37,46 +43,47 @@ export function PlayersList({
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
-              <TableHead>Handicap</TableHead>
-              <TableHead>Paid</TableHead>
-              <TableHead>Previous Winner</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead className="text-center">Handicap</TableHead>
+              <TableHead className="text-center">Paid</TableHead>
+              <TableHead className="text-center">Matches Won</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.map((player) => (
-              <TableRow key={player.id}>
-                <TableCell className="font-medium">{player.name}</TableCell>
-                <TableCell>{player.handicapIndex != null ? Number(player.handicapIndex).toFixed(1) : "TBD"}</TableCell>
-                <TableCell><PaymentStatusBadge paid={player.hasPaid} /></TableCell>
-                <TableCell><PreviousWinnerBadge wins={player.previousWins} /></TableCell>
-                <TableCell><Badge variant="secondary">{getPlayerTournamentStatus(player, matches)}</Badge></TableCell>
-              </TableRow>
-            ))}
+            {filtered.map((player) => {
+              const matchesWon = winsByPlayerId.get(player.id) ?? 0;
+              return (
+                <TableRow key={player.id}>
+                  <TableCell className="font-medium">{player.name}</TableCell>
+                  <TableCell className="text-center">{player.handicapIndex != null ? Number(player.handicapIndex).toFixed(1) : "TBD"}</TableCell>
+                  <TableCell className="text-center"><PaymentStatusBadge paid={player.hasPaid} /></TableCell>
+                  <TableCell className="text-center font-semibold">{matchesWon}</TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>
 
       <div className="grid gap-3 md:hidden">
-        {filtered.map((player) => (
-          <Card key={player.id}>
-            <CardContent className="space-y-3 p-4">
-              <div className="flex items-start justify-between gap-3">
+        {filtered.map((player) => {
+          const matchesWon = winsByPlayerId.get(player.id) ?? 0;
+          return (
+            <Card key={player.id}>
+              <CardContent className="relative space-y-3 p-4 pr-28">
+                <div className="absolute right-4 top-4">
+                  <PaymentStatusBadge paid={player.hasPaid} />
+                </div>
                 <div>
                   <p className="font-semibold">{player.name}</p>
                   <p className="text-sm text-muted-foreground">
                     Handicap {player.handicapIndex != null ? Number(player.handicapIndex).toFixed(1) : "TBD"}
                   </p>
                 </div>
-                <Badge variant="secondary">{getPlayerTournamentStatus(player, matches)}</Badge>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <PaymentStatusBadge paid={player.hasPaid} />
-                <PreviousWinnerBadge wins={player.previousWins} />
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                <p className="text-sm font-semibold text-slate-700">Matches won: {matchesWon}</p>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );

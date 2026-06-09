@@ -13,7 +13,15 @@ export function getSlotDisplay(match: MatchWithPlayers, slot: "player1" | "playe
   return feeder ? `Winner of ${feeder}` : "TBD";
 }
 
-export function calculateHandicapStrokes(player1: Player | null, player2: Player | null) {
+type HandicapParticipant = {
+  name: string;
+  handicapIndex: string | number | null;
+};
+
+export function calculateHandicapStrokes(
+  player1: HandicapParticipant | null,
+  player2: HandicapParticipant | null,
+) {
   if (!player1 || !player2 || player1.handicapIndex == null || player2.handicapIndex == null) {
     return {
       complete: false,
@@ -47,6 +55,31 @@ export function calculateHandicapStrokes(player1: Player | null, player2: Player
     giver: lower,
     receiver: higher,
     message: `${lower.name} gives ${strokes} ${strokes === 1 ? "stroke" : "strokes"} to ${higher.name}`,
+  };
+}
+
+export function getMatchSlotHandicap(match: MatchWithPlayers, slot: "player1" | "player2") {
+  const snapshot = slot === "player1" ? match.player1HandicapIndex : match.player2HandicapIndex;
+  if (snapshot != null) return snapshot;
+
+  const player = slot === "player1" ? match.player1 : match.player2;
+  return player?.handicapIndex ?? null;
+}
+
+export function getMatchHandicapParticipants(match: MatchWithPlayers) {
+  return {
+    player1: match.player1
+      ? {
+          name: match.player1.name,
+          handicapIndex: getMatchSlotHandicap(match, "player1"),
+        }
+      : null,
+    player2: match.player2
+      ? {
+          name: match.player2.name,
+          handicapIndex: getMatchSlotHandicap(match, "player2"),
+        }
+      : null,
   };
 }
 
