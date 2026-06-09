@@ -63,13 +63,13 @@ const connectors: Array<[string, string]> = [
 ];
 
 const roundLabels = [
-  { label: "Play-In", x: 76, y: 130 },
+  { label: "Round 1", x: 76, y: 130 },
   { label: "Round of 16", x: 216, y: 130 },
   { label: "Quarterfinal", x: 356, y: 130 },
   { label: "Semifinal", x: 494, y: 130 },
   { label: "Quarterfinal", x: 644, y: 130 },
   { label: "Round of 16", x: 784, y: 130 },
-  { label: "Play-In", x: 924, y: 130 },
+  { label: "Round 1", x: 924, y: 130 },
 ];
 
 export function HeroLiveBracketPreview({ matches }: { matches: MatchWithPlayers[] }) {

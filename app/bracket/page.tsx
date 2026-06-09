@@ -13,12 +13,12 @@ export default async function BracketPage() {
           <p className="text-sm font-bold uppercase tracking-[0.16em] text-primary">Electro-Matic Golf Tournament</p>
           <h1 className="mt-2 text-3xl font-bold text-slate-950">Official Bracket</h1>
           <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
-            Follow the EM Cup field from play-in matches through the Blue Jacket final. Select any matchup for schedule, handicap, and result details.
+            Follow the EM Cup field from Round 1 matches through the Blue Jacket final. Select any matchup for schedule, handicap, and result details.
           </p>
         </div>
         <Bracket matches={matches} />
         <p className="hidden max-w-3xl text-sm text-slate-500 lg:block">
-          Play-In winners advance to face the players already placed in the Round of 16. Open slots display TBD or Winner of the relevant match. Winners are highlighted in blue once results are entered.
+          Round 1 winners advance to face the players already placed in the Round of 16. Open slots display TBD or Winner of the relevant match. Winners are highlighted in blue once results are entered.
         </p>
       </div>
     </div>

@@ -13,7 +13,7 @@ import { ROUND_DEADLINES } from "@/lib/constants";
 import type { MatchWithPlayers } from "@/lib/types";
 import { cn, formatDate, formatDateTime } from "@/lib/utils";
 
-const mobileRounds = ["Play-In", "Round of 16", "Quarterfinal", "Semifinal", "Final", "Champion"] as const;
+const mobileRounds = ["Round 1", "Round of 16", "Quarterfinal", "Semifinal", "Final", "Champion"] as const;
 
 type MobileRound = (typeof mobileRounds)[number];
 

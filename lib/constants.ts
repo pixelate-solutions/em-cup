@@ -7,7 +7,7 @@ export const PRIZE_COPY =
   "Top 4 paid out. Champion receives the Blue Jacket unless they are a repeat winner, in which case a patch is added to the existing jacket.";
 
 export const ROUND_DEADLINES = [
-  { label: "Play-In", date: "2026-06-28" },
+  { label: "Round 1", date: "2026-06-28" },
   { label: "Round of 16", date: "2026-07-19" },
   { label: "Quarterfinal", date: "2026-08-16" },
   { label: "Semifinal", date: "2026-09-13" },
@@ -15,7 +15,7 @@ export const ROUND_DEADLINES = [
 ] as const;
 
 export const ROUND_LABELS = [
-  "Play-In",
+  "Round 1",
   "Round of 16",
   "Quarterfinal",
   "Semifinal",

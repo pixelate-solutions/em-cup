@@ -54,7 +54,7 @@ const playerNames = [
 ];
 
 const deadlineByRound: Record<string, string> = {
-  "Play-In": "2026-06-28",
+  "Round 1": "2026-06-28",
   "Round of 16": "2026-07-19",
   Quarterfinal: "2026-08-16",
   Semifinal: "2026-09-13",
@@ -91,15 +91,15 @@ async function main() {
   playerIdLookup = id;
 
   const baseMatches: NewMatch[] = [
-    m("L1", 1, "Play-In", "left", 1, "Nick Mink", "Sal Pesce"),
-    m("L2", 1, "Play-In", "left", 2, "Kipp Usher", "Tyler Hop"),
-    m("L3", 1, "Play-In", "left", 3, "Mike Czarnecki", "Matt Capaldi"),
-    m("L4", 1, "Play-In", "left", 4, "Jim Sulla", "Chris Bryant"),
-    m("R1", 1, "Play-In", "right", 5, "James Baker", "Atharva Burande"),
-    m("R2", 1, "Play-In", "right", 6, "Kyle Schubel", "John Skope"),
-    m("R3", 1, "Play-In", "right", 7, "Mike Dubay", "Carter Johnston"),
-    m("R4", 1, "Play-In", "right", 8, "Dom Meloche", "Joey Morrison"),
-    m("R8", 1, "Play-In", "right", 9, "CJ Borglin", "Mario Barraco"),
+    m("L1", 1, "Round 1", "left", 1, "Nick Mink", "Sal Pesce"),
+    m("L2", 1, "Round 1", "left", 2, "Kipp Usher", "Tyler Hop"),
+    m("L3", 1, "Round 1", "left", 3, "Mike Czarnecki", "Matt Capaldi"),
+    m("L4", 1, "Round 1", "left", 4, "Jim Sulla", "Chris Bryant"),
+    m("R1", 1, "Round 1", "right", 5, "James Baker", "Atharva Burande"),
+    m("R2", 1, "Round 1", "right", 6, "Kyle Schubel", "John Skope"),
+    m("R3", 1, "Round 1", "right", 7, "Mike Dubay", "Carter Johnston"),
+    m("R4", 1, "Round 1", "right", 8, "Dom Meloche", "Joey Morrison"),
+    m("R8", 1, "Round 1", "right", 9, "CJ Borglin", "Mario Barraco"),
 
     m("L5", 2, "Round of 16", "left", 1, null, "Mike Mansell"),
     m("L6", 2, "Round of 16", "left", 2, null, "Rich Laramee"),

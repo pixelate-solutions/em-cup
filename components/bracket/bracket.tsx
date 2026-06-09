@@ -77,7 +77,7 @@ const links: Array<[string, string]> = [
 ];
 
 const headers = [
-  { label: "Play-In", shortLabel: "Play-In", date: "2026-06-28", x: 0 },
+  { label: "Round 1", shortLabel: "Round 1", date: "2026-06-28", x: 0 },
   { label: "Round of 16", shortLabel: "R16", date: "2026-07-19", x: 188 },
   { label: "Quarterfinal", shortLabel: "QF", date: "2026-08-16", x: 376 },
   { label: "Semifinal", shortLabel: "SF", date: "2026-09-13", x: 564 },
@@ -85,7 +85,7 @@ const headers = [
   { label: "Semifinal", shortLabel: "SF", date: "2026-09-13", x: 966 },
   { label: "Quarterfinal", shortLabel: "QF", date: "2026-08-16", x: 1154 },
   { label: "Round of 16", shortLabel: "R16", date: "2026-07-19", x: 1342 },
-  { label: "Play-In", shortLabel: "Play-In", date: "2026-06-28", x: 1530 },
+  { label: "Round 1", shortLabel: "Round 1", date: "2026-06-28", x: 1530 },
 ];
 
 export function Bracket({
@@ -296,14 +296,14 @@ function getCurrentRoundLabel() {
   const now = new Date();
   const year = 2026;
   const dates = {
-    playIn: new Date(year, 5, 28),
+    round1: new Date(year, 5, 28),
     roundOf16: new Date(year, 6, 19),
     quarterfinal: new Date(year, 7, 16),
     semifinal: new Date(year, 8, 13),
     final: new Date(year, 9, 4),
   };
 
-  if (now < dates.playIn) return "Play-In";
+  if (now < dates.round1) return "Round 1";
   if (now < dates.roundOf16) return "Round of 16";
   if (now < dates.quarterfinal) return "Quarterfinal";
   if (now < dates.semifinal) return "Semifinal";
