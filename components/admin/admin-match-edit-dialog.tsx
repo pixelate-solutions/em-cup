@@ -220,8 +220,8 @@ function AdminMatchEditForm({
         />
       </Field>
 
-      <div className="sticky bottom-0 -mx-4 border-t border-slate-200 bg-white/95 px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 backdrop-blur">
-        <Button type="button" className="w-full rounded-xl" disabled={isPending} onClick={save}>
+      <div className="sticky bottom-0 z-20 -mx-4 border-t border-slate-200 bg-white px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 shadow-[0_-8px_18px_rgba(255,255,255,0.92)] after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-24 after:bg-white">
+        <Button type="button" className="relative z-10 w-full rounded-xl" disabled={isPending} onClick={save}>
           {isPending ? "Saving..." : "Save match"}
         </Button>
       </div>
