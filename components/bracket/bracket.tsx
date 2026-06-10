@@ -46,7 +46,6 @@ const nodes: NodeSpec[] = [
   { id: "R1", x: 1530, y: 80 },
   { id: "R2", x: 1530, y: 184 },
   { id: "R3", x: 1530, y: 305 },
-  { id: "R4", x: 1530, y: 448 },
   { id: "R8", x: 1530, y: 578 },
 ];
 
@@ -65,7 +64,6 @@ const links: Array<[string, string]> = [
   ["R1", "R5"],
   ["R2", "R5"],
   ["R3", "R6"],
-  ["R4", "R7"],
   ["R8", "R8B"],
   ["R5", "R9"],
   ["R6", "R9"],
@@ -189,7 +187,7 @@ function ScaledBracketCanvas({
             >
               <p className="text-lg font-extrabold text-slate-950">{header.shortLabel}</p>
               <p className="mt-0.5 text-xs font-semibold text-slate-500">
-                {header.label === "Final" ? `By ${formatDate(header.date)}` : formatDate(header.date)}
+                {header.label === "Final" ? `${formatDate(header.date)}` : formatDate(header.date)}
               </p>
             </div>
           ))}

@@ -25,7 +25,7 @@ export function BracketRound({
         <h2 className="text-sm font-bold uppercase tracking-wide text-slate-900">{label}</h2>
         {deadline ? (
           <p className="mt-1 text-xs font-medium text-slate-500">
-            Deadline {label === "Final" ? `by ${formatDate(deadline)}` : formatDate(deadline)}
+            Deadline {label === "Final" ? `${formatDate(deadline)}` : formatDate(deadline)}
           </p>
         ) : null}
       </div>

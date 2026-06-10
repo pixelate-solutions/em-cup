@@ -38,7 +38,6 @@ const playerNames = [
   "Atharva Burande",
   "Mike Dubay",
   "Carter Johnston",
-  "Dom Meloche",
   "Joey Morrison",
   "CJ Borglin",
   "Mario Barraco",
@@ -52,6 +51,10 @@ const playerNames = [
   "Nick Skope",
   "John Skope",
 ];
+
+const ghinMatchHints = new Map([
+  ["Mike Dubay", { ghinState: "MI", ghinClubName: "Maple Lane" }],
+]);
 
 const deadlineByRound: Record<string, string> = {
   "Round 1": "2026-06-28",
@@ -74,6 +77,7 @@ async function main() {
         const previousWins = previousWinnerMap.get(name) ?? 0;
         return {
           name,
+          ...ghinMatchHints.get(name),
           isPreviousWinner: previousWins > 0,
           previousWins,
           hasPaid: false,
@@ -98,7 +102,6 @@ async function main() {
     m("R1", 1, "Round 1", "right", 5, "James Baker", "Atharva Burande"),
     m("R2", 1, "Round 1", "right", 6, "Kyle Schubel", "John Skope"),
     m("R3", 1, "Round 1", "right", 7, "Mike Dubay", "Carter Johnston"),
-    m("R4", 1, "Round 1", "right", 8, "Dom Meloche", "Joey Morrison"),
     m("R8", 1, "Round 1", "right", 9, "CJ Borglin", "Mario Barraco"),
 
     m("L5", 2, "Round of 16", "left", 1, null, "Mike Mansell"),
@@ -107,7 +110,7 @@ async function main() {
     m("L8", 2, "Round of 16", "left", 4, null, "Dan Fickes"),
     m("R5", 2, "Round of 16", "right", 5, null, null),
     m("R6", 2, "Round of 16", "right", 6, null, "Scott Nuyttens"),
-    m("R7", 2, "Round of 16", "right", 7, null, "Walt Wojtkowski"),
+    m("R7", 2, "Round of 16", "right", 7, "Joey Morrison", "Walt Wojtkowski"),
     m("R8B", 2, "Round of 16", "right", 8, null, "Nick Skope"),
 
     m("L9", 3, "Quarterfinal", "left", 1, null, null),
@@ -138,7 +141,6 @@ async function main() {
     ["R1", "R5", "player1"],
     ["R2", "R5", "player2"],
     ["R3", "R6", "player1"],
-    ["R4", "R7", "player1"],
     ["R8", "R8B", "player1"],
     ["R5", "R9", "player1"],
     ["R6", "R9", "player2"],

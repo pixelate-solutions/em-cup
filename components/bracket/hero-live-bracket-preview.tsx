@@ -20,22 +20,22 @@ const boxes: BoxSpec[] = [
   { id: "L6", x: 164, y: 256, w: 104, h: 42, side: "left" },
   { id: "L7", x: 164, y: 392, w: 104, h: 42, side: "left" },
   { id: "L8", x: 164, y: 482, w: 104, h: 42, side: "left" },
-  { id: "L9", x: 304, y: 210, w: 104, h: 42, side: "left" },
-  { id: "L10", x: 304, y: 438, w: 104, h: 42, side: "left" },
-  { id: "L13", x: 444, y: 276, w: 100, h: 38, side: "left" },
+  { id: "L9", x: 294, y: 210, w: 104, h: 42, side: "left" },
+  { id: "L10", x: 294, y: 438, w: 104, h: 42, side: "left" },
+  { id: "L13", x: 426, y: 326, w: 100, h: 38, side: "left" },
+  { id: "F1", x: 548, y: 324, w: 104, h: 42, side: "center" },
 
-  { id: "R1", x: 872, y: 148, w: 104, h: 42, side: "right" },
-  { id: "R2", x: 872, y: 226, w: 104, h: 42, side: "right" },
-  { id: "R3", x: 872, y: 328, w: 104, h: 42, side: "right" },
-  { id: "R4", x: 872, y: 436, w: 104, h: 42, side: "right" },
-  { id: "R8", x: 872, y: 526, w: 104, h: 42, side: "right" },
-  { id: "R5", x: 732, y: 187, w: 104, h: 42, side: "right" },
-  { id: "R6", x: 732, y: 334, w: 104, h: 42, side: "right" },
-  { id: "R7", x: 732, y: 442, w: 104, h: 42, side: "right" },
-  { id: "R8B", x: 732, y: 532, w: 104, h: 42, side: "right" },
-  { id: "R9", x: 592, y: 260, w: 104, h: 42, side: "right" },
-  { id: "R10", x: 592, y: 486, w: 104, h: 42, side: "right" },
-  { id: "R13", x: 456, y: 410, w: 100, h: 38, side: "right" },
+  { id: "R1", x: 1072, y: 160, w: 104, h: 42, side: "right" },
+  { id: "R2", x: 1072, y: 250, w: 104, h: 42, side: "right" },
+  { id: "R3", x: 1072, y: 386, w: 104, h: 42, side: "right" },
+  { id: "R8", x: 1072, y: 476, w: 104, h: 42, side: "right" },
+  { id: "R5", x: 932, y: 166, w: 104, h: 42, side: "right" },
+  { id: "R6", x: 932, y: 256, w: 104, h: 42, side: "right" },
+  { id: "R7", x: 932, y: 392, w: 104, h: 42, side: "right" },
+  { id: "R8B", x: 932, y: 482, w: 104, h: 42, side: "right" },
+  { id: "R9", x: 802, y: 210, w: 104, h: 42, side: "right" },
+  { id: "R10", x: 802, y: 438, w: 104, h: 42, side: "right" },
+  { id: "R13", x: 674, y: 326, w: 100, h: 38, side: "right" },
 ];
 
 const connectors: Array<[string, string]> = [
@@ -49,10 +49,10 @@ const connectors: Array<[string, string]> = [
   ["L8", "L10"],
   ["L9", "L13"],
   ["L10", "L13"],
+  ["L13", "F1"],
   ["R1", "R5"],
   ["R2", "R5"],
   ["R3", "R6"],
-  ["R4", "R7"],
   ["R8", "R8B"],
   ["R5", "R9"],
   ["R6", "R9"],
@@ -60,16 +60,19 @@ const connectors: Array<[string, string]> = [
   ["R8B", "R10"],
   ["R9", "R13"],
   ["R10", "R13"],
+  ["R13", "F1"],
 ];
 
 const roundLabels = [
   { label: "Round 1", x: 76, y: 130 },
   { label: "Round of 16", x: 216, y: 130 },
-  { label: "Quarterfinal", x: 356, y: 130 },
-  { label: "Semifinal", x: 494, y: 130 },
-  { label: "Quarterfinal", x: 644, y: 130 },
-  { label: "Round of 16", x: 784, y: 130 },
-  { label: "Round 1", x: 924, y: 130 },
+  { label: "Quarterfinal", x: 346, y: 130 },
+  { label: "Semifinal", x: 476, y: 130 },
+  { label: "Final", x: 600, y: 130 },
+  { label: "Semifinal", x: 724, y: 130 },
+  { label: "Quarterfinal", x: 854, y: 130 },
+  { label: "Round of 16", x: 984, y: 130 },
+  { label: "Round 1", x: 1124, y: 130 },
 ];
 
 export function HeroLiveBracketPreview({ matches }: { matches: MatchWithPlayers[] }) {
@@ -80,19 +83,19 @@ export function HeroLiveBracketPreview({ matches }: { matches: MatchWithPlayers[
   return (
     <div className="relative w-full rounded-[1.25rem] border border-primary/10 bg-[linear-gradient(180deg,#f8fbff_0%,#ffffff_48%,#e9f5e8_100%)] shadow-inner">
       <div className="flex items-center justify-between px-4 py-3">
-        <Badge variant="outline" className="border-primary/20 bg-white text-primary">
+        <Badge variant="outline" className="border-primary/20 bg-white text-sm text-primary">
           Official Bracket
         </Badge>
-        <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <span className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Live Updates
         </span>
       </div>
 
       <div className="px-2 pb-2">
         <svg
-          viewBox="0 0 1000 620"
+          viewBox="0 0 1200 620"
           preserveAspectRatio="xMidYMid meet"
-          className="block aspect-[1.62] w-full overflow-hidden rounded-2xl border border-primary/10 bg-white"
+          className="block aspect-[1.94] w-full overflow-hidden rounded-2xl border border-primary/10 bg-white"
           role="img"
           aria-label="Live EM Cup bracket preview"
         >
@@ -111,13 +114,13 @@ export function HeroLiveBracketPreview({ matches }: { matches: MatchWithPlayers[
             </filter>
           </defs>
 
-          <rect width="1000" height="620" rx="24" fill="url(#heroBracketBackground)" />
-          <rect width="1000" height="620" rx="24" fill="url(#heroBracketGreen)" />
+          <rect width="1200" height="620" rx="24" fill="url(#heroBracketBackground)" />
+          <rect width="1200" height="620" rx="24" fill="url(#heroBracketGreen)" />
 
-          <text x="500" y="44" textAnchor="middle" className="fill-primary" fontSize="14" fontWeight="800" letterSpacing="6">
+          <text x="600" y="44" textAnchor="middle" className="fill-primary" fontSize="15" fontWeight="800" letterSpacing="6">
             ELECTRO-MATIC GOLF TOURNAMENT
           </text>
-          <text x="500" y="86" textAnchor="middle" className="fill-primary" fontSize="36" fontWeight="900">
+          <text x="600" y="86" textAnchor="middle" className="fill-primary" fontSize="38" fontWeight="900">
             EM Cup
           </text>
 
@@ -128,7 +131,7 @@ export function HeroLiveBracketPreview({ matches }: { matches: MatchWithPlayers[
               y={item.y}
               textAnchor="middle"
               className="fill-primary"
-              fontSize="15"
+              fontSize="14"
               fontWeight="900"
             >
               {item.label.toUpperCase()}
@@ -138,11 +141,11 @@ export function HeroLiveBracketPreview({ matches }: { matches: MatchWithPlayers[
           <ConnectorLines />
 
           <g filter="url(#heroBracketShadow)">
-            <rect x="442" y="336" width="116" height="58" rx="14" fill="#ffffff" stroke="#0b58b5" strokeWidth="2" />
-            <text x="500" y="360" textAnchor="middle" className="fill-primary" fontSize="12" fontWeight="900">
+            <rect x="542" y="242" width="116" height="58" rx="14" fill="#ffffff" stroke="#0b58b5" strokeWidth="2" />
+            <text x="600" y="266" textAnchor="middle" className="fill-primary" fontSize="13" fontWeight="900">
               CHAMPION
             </text>
-            <text x="500" y="380" textAnchor="middle" fill="#102033" fontSize="15" fontWeight="900">
+            <text x="600" y="286" textAnchor="middle" fill="#102033" fontSize="16" fontWeight="900">
               {compactText(champion, 13)}
             </text>
           </g>
@@ -168,7 +171,7 @@ function ConnectorLines() {
         const to = boxById.get(toId);
         if (!from || !to) return null;
 
-        const fromRight = from.side === "left";
+        const fromRight = from.x < to.x;
         const startX = fromRight ? from.x + from.w : from.x;
         const startY = from.y + from.h / 2;
         const endX = fromRight ? to.x : to.x + to.w;
@@ -177,8 +180,7 @@ function ConnectorLines() {
 
         return <path key={`${fromId}-${toId}`} d={`M ${startX} ${startY} H ${midX} V ${endY} H ${endX}`} />;
       })}
-      <path d="M 494 314 V 326 H 500 V 336" />
-      <path d="M 506 410 V 402 H 500 V 394" />
+      <path d="M 600 300 V 324" />
     </g>
   );
 }
@@ -216,7 +218,7 @@ function MiniMatch({ box, match }: { box: BoxSpec; match: MatchWithPlayers }) {
               y={rowY}
               textAnchor="middle"
               fill={player ? (isLoser ? "#6b7a90" : "#102033") : "#4d78b5"}
-              fontSize="8.4"
+              fontSize="9.2"
               fontStyle={player ? "normal" : "italic"}
               fontWeight={isWinner ? "900" : "800"}
             >

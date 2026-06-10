@@ -154,7 +154,7 @@ export function MobileBracketCarousel({
             <p className="text-lg font-extrabold text-slate-950">{activeRound}</p>
             <p className="text-xs font-semibold text-slate-500">
               {rounds[activeIndex]?.deadline
-                ? `${activeRound === "Final" ? "By " : "Deadline "}${formatDate(rounds[activeIndex].deadline)}`
+                ? `${"Deadline "}${formatDate(rounds[activeIndex].deadline)}`
                 : "Champion receives the Blue Jacket"}
             </p>
           </div>

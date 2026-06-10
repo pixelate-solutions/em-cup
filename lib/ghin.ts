@@ -62,6 +62,10 @@ const NAME_SUFFIXES = new Set([
   "senior",
 ]);
 
+const GHIN_MATCH_HINTS: Record<string, { state?: string; clubName?: string }> = {
+  mikedubay: { state: "MI", clubName: "Maple Lane" },
+};
+
 const STATE_CODES: Record<string, string> = {
   alabama: "AL",
   alaska: "AK",
@@ -266,6 +270,7 @@ async function findGolferForPlayer(player: Player) {
   }
 
   const name = splitPlayerName(player);
+  const matchHint = getMatchHint(player);
   const candidates = new Map<number, GhinCandidate>();
 
   for (const firstName of firstNameCandidates(name.firstName)) {
@@ -273,7 +278,7 @@ async function findGolferForPlayer(player: Player) {
       firstName,
       lastName: name.lastName,
       suffix: name.suffix,
-      state: player.ghinState,
+      state: player.ghinState || matchHint?.state || null,
       country: player.ghinCountry,
     });
 
@@ -483,7 +488,8 @@ function selectBestGolfer(
   const firstNames = new Set(firstNameCandidates(name.firstName).map(normalizeName));
   const lastName = normalizeName(name.lastName);
   const suffix = normalizeSuffix(name.suffix);
-  const desiredState = normalizeState(player.ghinState);
+  const matchHint = getMatchHint(player);
+  const desiredState = normalizeState(player.ghinState || matchHint?.state || null);
   const exactNameCandidates = candidates.filter(
     ({ golfer }) => golferMatchesLastName(golfer, lastName) && firstNames.has(normalizeName(golfer.first_name)),
   );
@@ -504,11 +510,16 @@ function selectBestGolfer(
       return constrainedMatches[0].golfer;
     }
 
+    const clubMatches = filterByClubHint(constrainedMatches, player, matchHint);
+    if (clubMatches.length === 1) {
+      return clubMatches[0].golfer;
+    }
+
     if (constrainedMatches.length === 0) {
       throw new Error(`No GHIN found in ${desiredState}`);
     }
 
-    throw new Error(`Multiple GHINs found in ${desiredState}; add GHIN number`);
+    throw new Error(`Multiple GHINs found in ${desiredState}; add GHIN number${clubHintLabel(player, matchHint)}`);
   }
 
   if (suffix) {
@@ -518,6 +529,11 @@ function selectBestGolfer(
     }
   }
 
+  const clubMatches = filterByClubHint(exactNameCandidates, player, matchHint);
+  if (clubMatches.length === 1) {
+    return clubMatches[0].golfer;
+  }
+
   const scored = candidates
     .map(({ golfer, fromStateSearch }) => {
       let score = 0;
@@ -525,6 +541,7 @@ function selectBestGolfer(
       if (firstNames.has(normalizeName(golfer.first_name))) score += 35;
       if (suffix && golferMatchesSuffix(golfer, suffix)) score += 30;
       if (desiredState && (fromStateSearch || golferMatchesState(golfer, desiredState))) score += 20;
+      if (clubHintMatches(golfer, player, matchHint)) score += 20;
       if (golfer.status === "Active") score += 5;
       return { golfer, score };
     })
@@ -561,6 +578,27 @@ function splitPlayerName(player: Player) {
 
 function uniqueCandidates(candidates: GhinCandidate[]) {
   return Array.from(new Map(candidates.map((candidate) => [candidate.golfer.ghin, candidate])).values());
+}
+
+function getMatchHint(player: Player) {
+  return GHIN_MATCH_HINTS[normalizeName(player.name)];
+}
+
+function filterByClubHint(candidates: GhinCandidate[], player: Player, matchHint: { clubName?: string } | undefined) {
+  const clubHint = normalizeClubHint(player.ghinClubName || matchHint?.clubName || null);
+  if (!clubHint) return [];
+  return candidates.filter(({ golfer }) => normalizeClubHint(golfer.club_name ?? null)?.includes(clubHint));
+}
+
+function clubHintMatches(golfer: GhinGolfer, player: Player, matchHint: { clubName?: string } | undefined) {
+  const clubHint = normalizeClubHint(player.ghinClubName || matchHint?.clubName || null);
+  if (!clubHint) return false;
+  return Boolean(normalizeClubHint(golfer.club_name ?? null)?.includes(clubHint));
+}
+
+function clubHintLabel(player: Player, matchHint: { clubName?: string } | undefined) {
+  const clubHint = player.ghinClubName || matchHint?.clubName;
+  return clubHint ? ` or verify home course ${clubHint}` : "";
 }
 
 function lastNameSearchVariants(lastName: string, suffix: string | null) {
@@ -662,6 +700,11 @@ function formatSuffixForSearch(suffix: string) {
 
 function normalizeName(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function normalizeClubHint(value: string | null | undefined) {
+  const normalized = value ? normalizeName(value) : "";
+  return normalized || null;
 }
 
 function normalizeHandicap(value: string | number | null | undefined) {

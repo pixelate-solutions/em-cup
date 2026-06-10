@@ -95,7 +95,7 @@ export default async function Home() {
               <div key={deadline.label} className="flex items-center justify-between gap-4 px-5 py-4">
                 <span className="font-semibold text-foreground">{deadline.label}</span>
                 <time className="text-sm font-medium text-muted-foreground" dateTime={deadline.date}>
-                  {deadline.label === "Final" ? `By ${formatDate(deadline.date)}` : formatDate(deadline.date)}
+                  {deadline.label === "Final" ? `${formatDate(deadline.date)}` : formatDate(deadline.date)}
                 </time>
               </div>
             ))}

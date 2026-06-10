@@ -19,7 +19,7 @@ export function DeadlineTimeline() {
             <li key={deadline.label} className="flex items-center justify-between gap-4 border-l-2 border-primary/25 pl-4">
               <span className="font-medium">{deadline.label}</span>
               <time className="text-sm text-muted-foreground" dateTime={deadline.date}>
-                {deadline.label === "Final" ? `By ${formatDate(deadline.date)}` : formatDate(deadline.date)}
+                {deadline.label === "Final" ? `${formatDate(deadline.date)}` : formatDate(deadline.date)}
               </time>
             </li>
           ))}
