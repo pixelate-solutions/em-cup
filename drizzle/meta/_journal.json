@@ -36,6 +36,13 @@
       "when": 1781037552372,
       "tag": "0004_remove_ghin_name_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1781105286917,
+      "tag": "0005_normalize_right_match_ids",
+      "breakpoints": true
     }
   ]
 }

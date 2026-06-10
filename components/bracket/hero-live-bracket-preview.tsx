@@ -11,6 +11,8 @@ type BoxSpec = {
   side: "left" | "right" | "center";
 };
 
+type MatchSlot = "player1" | "player2";
+
 const boxes: BoxSpec[] = [
   { id: "L1", x: 24, y: 160, w: 104, h: 42, side: "left" },
   { id: "L2", x: 24, y: 250, w: 104, h: 42, side: "left" },
@@ -27,40 +29,40 @@ const boxes: BoxSpec[] = [
 
   { id: "R1", x: 1072, y: 160, w: 104, h: 42, side: "right" },
   { id: "R2", x: 1072, y: 250, w: 104, h: 42, side: "right" },
-  { id: "R3", x: 1072, y: 386, w: 104, h: 42, side: "right" },
-  { id: "R8", x: 1072, y: 476, w: 104, h: 42, side: "right" },
+  { id: "R3", x: 1072, y: 325, w: 104, h: 42, side: "right" },
+  { id: "R4", x: 1072, y: 476, w: 104, h: 42, side: "right" },
   { id: "R5", x: 932, y: 166, w: 104, h: 42, side: "right" },
-  { id: "R6", x: 932, y: 256, w: 104, h: 42, side: "right" },
+  { id: "R6", x: 932, y: 334, w: 104, h: 42, side: "right" },
   { id: "R7", x: 932, y: 392, w: 104, h: 42, side: "right" },
-  { id: "R8B", x: 932, y: 482, w: 104, h: 42, side: "right" },
-  { id: "R9", x: 802, y: 210, w: 104, h: 42, side: "right" },
+  { id: "R8", x: 932, y: 482, w: 104, h: 42, side: "right" },
+  { id: "R9", x: 802, y: 260, w: 104, h: 42, side: "right" },
   { id: "R10", x: 802, y: 438, w: 104, h: 42, side: "right" },
   { id: "R13", x: 674, y: 326, w: 100, h: 38, side: "right" },
 ];
 
-const connectors: Array<[string, string]> = [
-  ["L1", "L5"],
-  ["L2", "L6"],
-  ["L3", "L7"],
-  ["L4", "L8"],
-  ["L5", "L9"],
-  ["L6", "L9"],
-  ["L7", "L10"],
-  ["L8", "L10"],
-  ["L9", "L13"],
-  ["L10", "L13"],
-  ["L13", "F1"],
-  ["R1", "R5"],
-  ["R2", "R5"],
-  ["R3", "R6"],
-  ["R8", "R8B"],
-  ["R5", "R9"],
-  ["R6", "R9"],
-  ["R7", "R10"],
-  ["R8B", "R10"],
-  ["R9", "R13"],
-  ["R10", "R13"],
-  ["R13", "F1"],
+const connectors: Array<[string, string, MatchSlot]> = [
+  ["L1", "L5", "player1"],
+  ["L2", "L6", "player1"],
+  ["L3", "L7", "player1"],
+  ["L4", "L8", "player1"],
+  ["L5", "L9", "player1"],
+  ["L6", "L9", "player2"],
+  ["L7", "L10", "player1"],
+  ["L8", "L10", "player2"],
+  ["L9", "L13", "player1"],
+  ["L10", "L13", "player2"],
+  ["L13", "F1", "player1"],
+  ["R1", "R5", "player1"],
+  ["R2", "R5", "player2"],
+  ["R3", "R6", "player1"],
+  ["R4", "R8", "player1"],
+  ["R5", "R9", "player1"],
+  ["R6", "R9", "player2"],
+  ["R7", "R10", "player1"],
+  ["R8", "R10", "player2"],
+  ["R9", "R13", "player1"],
+  ["R10", "R13", "player2"],
+  ["R13", "F1", "player2"],
 ];
 
 const roundLabels = [
@@ -166,7 +168,7 @@ function ConnectorLines() {
 
   return (
     <g fill="none" stroke="#0b58b5" strokeLinecap="round" strokeWidth="2" opacity="0.76">
-      {connectors.map(([fromId, toId]) => {
+      {connectors.map(([fromId, toId, nextSlot]) => {
         const from = boxById.get(fromId);
         const to = boxById.get(toId);
         if (!from || !to) return null;
@@ -175,7 +177,7 @@ function ConnectorLines() {
         const startX = fromRight ? from.x + from.w : from.x;
         const startY = from.y + from.h / 2;
         const endX = fromRight ? to.x : to.x + to.w;
-        const endY = to.y + to.h / 2;
+        const endY = getConnectorEndY(from, to, nextSlot);
         const midX = fromRight ? startX + 18 : startX - 18;
 
         return <path key={`${fromId}-${toId}`} d={`M ${startX} ${startY} H ${midX} V ${endY} H ${endX}`} />;
@@ -183,6 +185,18 @@ function ConnectorLines() {
       <path d="M 600 300 V 324" />
     </g>
   );
+}
+
+function getConnectorEndY(from: BoxSpec, to: BoxSpec, nextSlot: MatchSlot) {
+  const sourceCenterY = from.y + from.h / 2;
+  const targetCenterY = to.y + to.h / 2;
+
+  if (Math.abs(from.y - to.y) < 1 || Math.abs(sourceCenterY - targetCenterY) < 1) {
+    return targetCenterY;
+  }
+
+  const targetSlotY = to.y + (nextSlot === "player1" ? to.h / 4 : (to.h * 3) / 4);
+  return Math.abs(sourceCenterY - targetSlotY) <= 6 ? sourceCenterY : targetSlotY;
 }
 
 function MiniMatch({ box, match }: { box: BoxSpec; match: MatchWithPlayers }) {

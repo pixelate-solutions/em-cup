@@ -63,6 +63,7 @@ const NAME_SUFFIXES = new Set([
 ]);
 
 const GHIN_MATCH_HINTS: Record<string, { state?: string; clubName?: string }> = {
+  mikeczarnecki: { state: "MI", clubName: "Cracklewood Golf Club" },
   mikedubay: { state: "MI", clubName: "Maple Lane" },
 };
 
@@ -259,18 +260,25 @@ async function findGolferForPlayer(player: Player) {
     throw new Error("GHIN_USERNAME and GHIN_PASSWORD are required");
   }
 
+  const matchHint = getMatchHint(player);
+
   if (player.ghinNumber?.trim()) {
     const golfer = await getGolferByGhinNumber(player.ghinNumber.trim());
-    const desiredState = normalizeState(player.ghinState);
+    const desiredState = normalizeState(player.ghinState || matchHint?.state || null);
     if (desiredState && !golferMatchesState(golfer, desiredState)) {
       throw new Error(`GHIN number ${player.ghinNumber.trim()} is not in ${desiredState}`);
     }
 
-    return golfer;
+    if (clubHintMatches(golfer, player, matchHint)) {
+      return golfer;
+    }
+
+    if (!player.ghinClubName && !matchHint?.clubName) {
+      return golfer;
+    }
   }
 
   const name = splitPlayerName(player);
-  const matchHint = getMatchHint(player);
   const candidates = new Map<number, GhinCandidate>();
 
   for (const firstName of firstNameCandidates(name.firstName)) {
@@ -585,19 +593,19 @@ function getMatchHint(player: Player) {
 }
 
 function filterByClubHint(candidates: GhinCandidate[], player: Player, matchHint: { clubName?: string } | undefined) {
-  const clubHint = normalizeClubHint(player.ghinClubName || matchHint?.clubName || null);
+  const clubHint = normalizeClubHint(matchHint?.clubName || player.ghinClubName || null);
   if (!clubHint) return [];
   return candidates.filter(({ golfer }) => normalizeClubHint(golfer.club_name ?? null)?.includes(clubHint));
 }
 
 function clubHintMatches(golfer: GhinGolfer, player: Player, matchHint: { clubName?: string } | undefined) {
-  const clubHint = normalizeClubHint(player.ghinClubName || matchHint?.clubName || null);
+  const clubHint = normalizeClubHint(matchHint?.clubName || player.ghinClubName || null);
   if (!clubHint) return false;
   return Boolean(normalizeClubHint(golfer.club_name ?? null)?.includes(clubHint));
 }
 
 function clubHintLabel(player: Player, matchHint: { clubName?: string } | undefined) {
-  const clubHint = player.ghinClubName || matchHint?.clubName;
+  const clubHint = matchHint?.clubName || player.ghinClubName;
   return clubHint ? ` or verify home course ${clubHint}` : "";
 }
 

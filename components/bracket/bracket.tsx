@@ -23,6 +23,8 @@ type NodeSpec = {
   y: number;
 };
 
+type MatchSlot = "player1" | "player2";
+
 const nodes: NodeSpec[] = [
   { id: "L1", x: 0, y: 106 },
   { id: "L2", x: 0, y: 235 },
@@ -34,44 +36,44 @@ const nodes: NodeSpec[] = [
   { id: "L8", x: 188, y: 578 },
   { id: "L9", x: 376, y: 188 },
   { id: "L10", x: 376, y: 512 },
-  { id: "L13", x: 564, y: 350 },
+  { id: "L13", x: 564, y: 335 },
   { id: "F1", x: 765, y: 350 },
-  { id: "R13", x: 966, y: 350 },
+  { id: "R13", x: 966, y: 365 },
   { id: "R9", x: 1154, y: 188 },
   { id: "R10", x: 1154, y: 512 },
   { id: "R5", x: 1342, y: 124 },
   { id: "R6", x: 1342, y: 305 },
   { id: "R7", x: 1342, y: 448 },
-  { id: "R8B", x: 1342, y: 578 },
+  { id: "R8", x: 1342, y: 578 },
   { id: "R1", x: 1530, y: 80 },
   { id: "R2", x: 1530, y: 184 },
-  { id: "R3", x: 1530, y: 305 },
-  { id: "R8", x: 1530, y: 578 },
+  { id: "R3", x: 1530, y: 290 },
+  { id: "R4", x: 1530, y: 565 },
 ];
 
-const links: Array<[string, string]> = [
-  ["L1", "L5"],
-  ["L2", "L6"],
-  ["L3", "L7"],
-  ["L4", "L8"],
-  ["L5", "L9"],
-  ["L6", "L9"],
-  ["L7", "L10"],
-  ["L8", "L10"],
-  ["L9", "L13"],
-  ["L10", "L13"],
-  ["L13", "F1"],
-  ["R1", "R5"],
-  ["R2", "R5"],
-  ["R3", "R6"],
-  ["R8", "R8B"],
-  ["R5", "R9"],
-  ["R6", "R9"],
-  ["R7", "R10"],
-  ["R8B", "R10"],
-  ["R9", "R13"],
-  ["R10", "R13"],
-  ["R13", "F1"],
+const links: Array<[string, string, MatchSlot]> = [
+  ["L1", "L5", "player1"],
+  ["L2", "L6", "player1"],
+  ["L3", "L7", "player1"],
+  ["L4", "L8", "player1"],
+  ["L5", "L9", "player1"],
+  ["L6", "L9", "player2"],
+  ["L7", "L10", "player1"],
+  ["L8", "L10", "player2"],
+  ["L9", "L13", "player1"],
+  ["L10", "L13", "player2"],
+  ["L13", "F1", "player1"],
+  ["R1", "R5", "player1"],
+  ["R2", "R5", "player2"],
+  ["R3", "R6", "player1"],
+  ["R4", "R8", "player1"],
+  ["R5", "R9", "player1"],
+  ["R6", "R9", "player2"],
+  ["R7", "R10", "player1"],
+  ["R8", "R10", "player2"],
+  ["R9", "R13", "player1"],
+  ["R10", "R13", "player2"],
+  ["R13", "F1", "player2"],
 ];
 
 const headers = [
@@ -264,7 +266,7 @@ function ConnectorLines() {
       preserveAspectRatio="none"
       aria-hidden="true"
     >
-      {links.map(([fromId, toId]) => {
+      {links.map(([fromId, toId, nextSlot]) => {
         const from = nodeById.get(fromId);
         const to = nodeById.get(toId);
         if (!from || !to) return null;
@@ -273,7 +275,7 @@ function ConnectorLines() {
         const startX = goesRight ? from.x + cardWidth : from.x;
         const startY = from.y + cardHeight / 2;
         const endX = goesRight ? to.x : to.x + cardWidth;
-        const endY = to.y + cardHeight / 2;
+        const endY = getConnectorEndY(from, to, nextSlot);
         const midX = goesRight ? startX + 18 : startX - 18;
 
         return (
@@ -288,6 +290,18 @@ function ConnectorLines() {
       })}
     </svg>
   );
+}
+
+function getConnectorEndY(from: NodeSpec, to: NodeSpec, nextSlot: MatchSlot) {
+  const sourceCenterY = from.y + cardHeight / 2;
+  const targetCenterY = to.y + cardHeight / 2;
+
+  if (Math.abs(from.y - to.y) < 1 || Math.abs(sourceCenterY - targetCenterY) < 1) {
+    return targetCenterY;
+  }
+
+  const targetSlotY = to.y + (nextSlot === "player1" ? cardHeight / 4 : (cardHeight * 3) / 4);
+  return Math.abs(sourceCenterY - targetSlotY) <= 4 ? sourceCenterY : targetSlotY;
 }
 
 function getCurrentRoundLabel() {

@@ -110,9 +110,9 @@ function getFeederMatchLabel(matchId: string, slot: "player1" | "player2") {
     L13: { player1: "L9", player2: "L10" },
     R5: { player1: "R1", player2: "R2" },
     R6: { player1: "R3" },
-    R8B: { player1: "R8" },
+    R8: { player1: "R4" },
     R9: { player1: "R5", player2: "R6" },
-    R10: { player1: "R7", player2: "R8B" },
+    R10: { player1: "R7", player2: "R8" },
     R13: { player1: "R9", player2: "R10" },
     F1: { player1: "L13", player2: "R13" },
   };
