@@ -41,7 +41,7 @@ export function AdminPaymentEditor({
   const [query, setQuery] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
-  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
+  const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
   const [isRefreshingAll, startRefreshAllTransition] = useTransition();
 
   const winsByPlayerId = useMemo(() => {
@@ -68,6 +68,11 @@ export function AdminPaymentEditor({
       return (aHandicap - bHandicap) * direction;
     });
   }, [players, query, sortDirection, sortKey, winsByPlayerId]);
+
+  const selectedPlayer = useMemo(
+    () => players.find((player) => player.id === selectedPlayerId) ?? null,
+    [players, selectedPlayerId],
+  );
 
   function updateSort(nextKey: SortKey) {
     if (nextKey === sortKey) {
@@ -152,7 +157,7 @@ export function AdminPaymentEditor({
                 key={player.id}
                 type="button"
                 className="relative cursor-pointer rounded-2xl border bg-white p-4 pr-28 text-left shadow-sm transition hover:border-primary/40 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                onClick={() => setSelectedPlayer(player)}
+                onClick={() => setSelectedPlayerId(player.id)}
               >
                 <div className="absolute right-4 top-4">
                   <PaymentStatusBadge paid={player.hasPaid} />
@@ -175,7 +180,7 @@ export function AdminPaymentEditor({
         player={selectedPlayer}
         matchesWon={selectedPlayer ? winsByPlayerId.get(selectedPlayer.id) ?? 0 : 0}
         open={Boolean(selectedPlayer)}
-        onOpenChange={(open) => !open && setSelectedPlayer(null)}
+        onOpenChange={(open) => !open && setSelectedPlayerId(null)}
       />
     </Card>
   );
@@ -345,6 +350,15 @@ function PlayerRow({ player, matchesWon }: { player: Player; matchesWon: number 
       try {
         const result = await refreshPlayerHandicapAction({ playerId: player.id });
         if (result.ok) {
+          const nextHandicapIndex = String(result.handicapIndex ?? "");
+          const nextGhinNumber = result.ghinNumber ?? "";
+          setHandicapIndex(nextHandicapIndex);
+          setGhinNumber(nextGhinNumber);
+          lastSavedRef.current = {
+            ...lastSavedRef.current,
+            handicapIndex: nextHandicapIndex,
+            ghinNumber: nextGhinNumber,
+          };
           toast.success(`${player.name} updated from GHIN`);
         } else {
           toast.error(`${player.name}: ${result.message}`);
@@ -564,6 +578,15 @@ function MobilePlayerEditForm({
       try {
         const result = await refreshPlayerHandicapAction({ playerId: player.id });
         if (result.ok) {
+          const nextHandicapIndex = String(result.handicapIndex ?? "");
+          const nextGhinNumber = result.ghinNumber ?? "";
+          setHandicapIndex(nextHandicapIndex);
+          setGhinNumber(nextGhinNumber);
+          lastSavedRef.current = {
+            ...lastSavedRef.current,
+            handicapIndex: nextHandicapIndex,
+            ghinNumber: nextGhinNumber,
+          };
           toast.success(`${player.name} updated from GHIN`);
         } else {
           toast.error(`${player.name}: ${result.message}`);
