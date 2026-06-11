@@ -160,7 +160,7 @@ async function main() {
     {
       name: "1st Place",
       description: "Champion payout",
-      amount: "1200.00",
+      amount: "1150.00",
     },
     {
       name: "2nd Place",
@@ -170,12 +170,12 @@ async function main() {
     {
       name: "3rd Place",
       description: "Third-place payout",
-      amount: "425.00",
+      amount: "400.00",
     },
     {
       name: "4th Place",
       description: "Fourth-place payout",
-      amount: "275.00",
+      amount: "250.00",
     },
     {
       name: "Blue Jacket",

@@ -43,6 +43,13 @@
       "when": 1781105286917,
       "tag": "0005_normalize_right_match_ids",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1781193600000,
+      "tag": "0006_update_prize_payouts",
+      "breakpoints": true
     }
   ]
 }
