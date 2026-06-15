@@ -44,6 +44,8 @@ const FIRST_NAME_ALIASES: Record<string, string[]> = {
   nikolas: ["Nikolas", "Nicholas", "Nickolas", "Nicolas", "Nick"],
   rich: ["Rich", "Richard"],
   sal: ["Sal", "Salvatore", "Salvador"],
+  tj: ["Tj", "TJ", "Tyler"],
+  tyler: ["Tyler", "Tj", "TJ"],
   walt: ["Walt", "Walter"],
 };
 
