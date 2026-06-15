@@ -4,6 +4,7 @@ import { and, eq, inArray } from "drizzle-orm";
 
 import { db } from "@/db";
 import { players, type Player } from "@/db/schema";
+import { syncMatchHandicapSnapshotsForPlayer } from "@/lib/match-handicap-snapshots";
 
 const GHIN_BASE_URL = "https://api2.ghin.com/api/v1";
 const FIREBASE_SESSION_URL =
@@ -207,6 +208,7 @@ export async function refreshPlayerHandicap(player: Player): Promise<GhinRefresh
         updatedAt: new Date(),
       })
       .where(eq(players.id, player.id));
+    await syncMatchHandicapSnapshotsForPlayer(player.id, handicap);
 
     return {
       playerId: player.id,

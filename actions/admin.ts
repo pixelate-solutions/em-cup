@@ -9,6 +9,7 @@ import { db } from "@/db";
 import { matches, players, prizes, tournamentSettings } from "@/db/schema";
 import { clearDownstreamResults, propagateWinner } from "@/lib/bracket-server";
 import { isAdminAuthenticated } from "@/lib/auth";
+import { syncMatchHandicapSnapshotsForPlayer } from "@/lib/match-handicap-snapshots";
 import {
   refreshAllPlayerHandicaps,
   refreshPlayerHandicapById,
@@ -174,14 +175,14 @@ export async function setMatchWinnerAction(input: z.infer<typeof winnerSchema>) 
     }
 
     storedPlayer1HandicapIndex =
-      match.player1HandicapIndex ??
       (match.player1Id ? refreshedHandicaps.get(match.player1Id) : null) ??
       player1?.handicapIndex ??
+      match.player1HandicapIndex ??
       null;
     storedPlayer2HandicapIndex =
-      match.player2HandicapIndex ??
       (match.player2Id ? refreshedHandicaps.get(match.player2Id) : null) ??
       player2?.handicapIndex ??
+      match.player2HandicapIndex ??
       null;
 
     await tx
@@ -258,6 +259,7 @@ export async function updatePlayerAction(input: z.infer<typeof playerSchema>) {
     .update(players)
     .set(patch)
     .where(eq(players.id, data.id));
+  await syncMatchHandicapSnapshotsForPlayer(data.id, handicap);
 
   revalidateApp();
   return { ok: true };
