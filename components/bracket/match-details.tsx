@@ -27,7 +27,7 @@ import {
   getSlotDisplay,
 } from "@/lib/bracket-utils";
 import type { MatchWithPlayers } from "@/lib/types";
-import { formatDate, formatDateTime } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 
 export function MatchDetails({
   match,
@@ -118,7 +118,9 @@ function MatchDetailsContent({
             <Calendar className="h-4 w-4" />
             Date
           </span>
-          <span className="text-right font-medium">{formatDateTime(match.scheduledAt)}</span>
+          <span className="text-right font-medium">
+            {match.scheduledAt ? formatDate(match.scheduledAt) : "Not scheduled"}
+          </span>
         </div>
         <div className="flex items-center justify-between gap-3">
           <span className="text-muted-foreground">Deadline</span>

@@ -11,7 +11,7 @@ import {
 } from "@/lib/bracket-utils";
 import { ROUND_DEADLINES } from "@/lib/constants";
 import type { MatchWithPlayers } from "@/lib/types";
-import { cn, formatDate, formatDateTime } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 
 const mobileRounds = ["Round 1", "Round of 16", "Quarterfinal", "Semifinal", "Final", "Champion"] as const;
 
@@ -263,7 +263,7 @@ function MobileMatchCard({
     { slot: "player2" as const, player: match.player2 },
   ];
   const winner = match.winner;
-  const detailLine = [match.location, match.scheduledAt ? formatDateTime(match.scheduledAt) : null]
+  const detailLine = [match.location, match.scheduledAt ? formatDate(match.scheduledAt) : null]
     .filter(Boolean)
     .join(" · ");
 

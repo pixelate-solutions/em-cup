@@ -16,7 +16,7 @@ export function formatCurrency(value: string | number | null | undefined) {
 
 export function formatDate(value: string | Date | null | undefined) {
   if (!value) return "TBD";
-  const date = typeof value === "string" ? new Date(`${value}T12:00:00`) : value;
+  const date = parseDisplayDate(value);
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
@@ -26,7 +26,7 @@ export function formatDate(value: string | Date | null | undefined) {
 
 export function formatDateTime(value: string | Date | null | undefined) {
   if (!value) return "Not scheduled";
-  const date = typeof value === "string" ? new Date(value) : value;
+  const date = parseDisplayDate(value);
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
@@ -34,4 +34,10 @@ export function formatDateTime(value: string | Date | null | undefined) {
     hour: "numeric",
     minute: "2-digit",
   }).format(date);
+}
+
+function parseDisplayDate(value: string | Date) {
+  if (value instanceof Date) return value;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return new Date(`${value}T12:00:00`);
+  return new Date(value);
 }

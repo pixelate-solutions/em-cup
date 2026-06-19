@@ -19,20 +19,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
-import { Label } from "@/components/ui/label";
-import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { getMatchDisplayName } from "@/lib/bracket-utils";
@@ -80,19 +73,19 @@ export function AdminMatchEditDialog({
   }
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[calc(100dvh-1rem)]">
-        <DrawerHeader className="shrink-0 px-4 pb-3 pt-4">
-          <DrawerTitle>{getMatchDisplayName(match)}</DrawerTitle>
-          <DrawerDescription>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="grid max-h-[calc(100dvh-2rem)] grid-rows-[auto_minmax(0,1fr)] gap-4 overflow-hidden rounded-2xl p-0">
+        <DialogHeader className="shrink-0 px-6 pb-0 pt-6 pr-12">
+          <DialogTitle>{getMatchDisplayName(match)}</DialogTitle>
+          <DialogDescription>
             Edit players, date played, location, winner, and notes.
-          </DrawerDescription>
-        </DrawerHeader>
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
+          </DialogDescription>
+        </DialogHeader>
+        <div className="min-h-0 overflow-y-auto px-6 pb-6">
           {content}
         </div>
-      </DrawerContent>
-    </Drawer>
+      </DialogContent>
+    </Dialog>
   );
 }
 
