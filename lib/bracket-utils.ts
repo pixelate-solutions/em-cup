@@ -59,10 +59,13 @@ export function calculateHandicapStrokes(
 }
 
 export function getMatchSlotHandicap(match: MatchWithPlayers, slot: "player1" | "player2") {
+  const matchHandicap = slot === "player1" ? match.player1HandicapIndex : match.player2HandicapIndex;
+  if (matchHandicap != null) return matchHandicap;
+
   const player = slot === "player1" ? match.player1 : match.player2;
   if (player?.handicapIndex != null) return player.handicapIndex;
 
-  return slot === "player1" ? match.player1HandicapIndex : match.player2HandicapIndex;
+  return null;
 }
 
 export function getMatchHandicapParticipants(match: MatchWithPlayers) {

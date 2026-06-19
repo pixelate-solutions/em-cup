@@ -58,6 +58,8 @@ export const matches = pgTable("matches", {
   }),
   player1HandicapIndex: numeric("player1_handicap_index", { precision: 4, scale: 1 }),
   player2HandicapIndex: numeric("player2_handicap_index", { precision: 4, scale: 1 }),
+  player1HandicapOverride: boolean("player1_handicap_override").notNull().default(false),
+  player2HandicapOverride: boolean("player2_handicap_override").notNull().default(false),
   winnerId: integer("winner_id").references(() => players.id, {
     onDelete: "set null",
   }),

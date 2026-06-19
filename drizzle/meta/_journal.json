@@ -57,6 +57,13 @@
       "when": 1781481600000,
       "tag": "0007_sync_match_handicap_snapshots",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1781901016530,
+      "tag": "0008_black_thunderbird",
+      "breakpoints": true
     }
   ]
 }

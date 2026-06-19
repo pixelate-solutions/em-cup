@@ -1,0 +1,2 @@
+ALTER TABLE "matches" ADD COLUMN "player1_handicap_override" boolean DEFAULT false NOT NULL;--> statement-breakpoint
+ALTER TABLE "matches" ADD COLUMN "player2_handicap_override" boolean DEFAULT false NOT NULL;

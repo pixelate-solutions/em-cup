@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import type { ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -104,8 +105,11 @@ function AdminMatchEditForm({
   );
   const [player1HandicapIndex, setPlayer1HandicapIndex] = useState(match.player1HandicapIndex ?? "");
   const [player2HandicapIndex, setPlayer2HandicapIndex] = useState(match.player2HandicapIndex ?? "");
+  const [player1HandicapOverride, setPlayer1HandicapOverride] = useState(match.player1HandicapOverride);
+  const [player2HandicapOverride, setPlayer2HandicapOverride] = useState(match.player2HandicapOverride);
   const [location, setLocation] = useState(match.location ?? "");
   const [details, setDetails] = useState(match.details ?? "");
+  const router = useRouter();
   const [, startTransition] = useTransition();
   const [saveStatus, setSaveStatus] = useState("");
   const lastSavedRef = useRef({
@@ -115,6 +119,8 @@ function AdminMatchEditForm({
     datePlayed: datePlayed ? toDateOnlyDateTime(datePlayed) : null,
     player1HandicapIndex: String(player1HandicapIndex),
     player2HandicapIndex: String(player2HandicapIndex),
+    player1HandicapOverride,
+    player2HandicapOverride,
     location: location.trim(),
     details: details.trim(),
   });
@@ -156,6 +162,8 @@ function AdminMatchEditForm({
       datePlayed: datePlayed ? toDateOnlyDateTime(datePlayed) : null,
       player1HandicapIndex: player1HandicapIndex.toString().trim(),
       player2HandicapIndex: player2HandicapIndex.toString().trim(),
+      player1HandicapOverride,
+      player2HandicapOverride,
       location: location.trim(),
       details: details.trim(),
     };
@@ -168,6 +176,8 @@ function AdminMatchEditForm({
       next.datePlayed === lastSaved.datePlayed &&
       next.player1HandicapIndex === lastSaved.player1HandicapIndex &&
       next.player2HandicapIndex === lastSaved.player2HandicapIndex &&
+      next.player1HandicapOverride === lastSaved.player1HandicapOverride &&
+      next.player2HandicapOverride === lastSaved.player2HandicapOverride &&
       next.location === lastSaved.location &&
       next.details === lastSaved.details
     ) {
@@ -194,6 +204,8 @@ function AdminMatchEditForm({
             player2Id: fromSelectValue(next.player2Id),
             player1HandicapIndex: next.player1HandicapIndex || null,
             player2HandicapIndex: next.player2HandicapIndex || null,
+            player1HandicapOverride: next.player1HandicapOverride,
+            player2HandicapOverride: next.player2HandicapOverride,
             scheduledAt: next.datePlayed,
             location: next.location || null,
             details: next.details || null,
@@ -219,6 +231,7 @@ function AdminMatchEditForm({
           }
 
           lastSavedRef.current = next;
+          router.refresh();
           finishStatus();
         } catch (error) {
           setSaveStatus("");
@@ -239,9 +252,12 @@ function AdminMatchEditForm({
     datePlayed,
     player1HandicapIndex,
     player2HandicapIndex,
+    player1HandicapOverride,
+    player2HandicapOverride,
     location,
     details,
     match.id,
+    router,
   ]);
 
   useEffect(() => {
@@ -303,7 +319,10 @@ function AdminMatchEditForm({
         <Field label="Player 1 handicap">
           <input
             value={player1HandicapIndex}
-            onChange={(event) => setPlayer1HandicapIndex(event.target.value)}
+            onChange={(event) => {
+              setPlayer1HandicapIndex(event.target.value);
+              setPlayer1HandicapOverride(true);
+            }}
             className="flex h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             inputMode="decimal"
             placeholder={match.player1?.handicapIndex != null ? Number(match.player1.handicapIndex).toFixed(1) : "GHIN/current"}
@@ -312,7 +331,10 @@ function AdminMatchEditForm({
         <Field label="Player 2 handicap">
           <input
             value={player2HandicapIndex}
-            onChange={(event) => setPlayer2HandicapIndex(event.target.value)}
+            onChange={(event) => {
+              setPlayer2HandicapIndex(event.target.value);
+              setPlayer2HandicapOverride(true);
+            }}
             className="flex h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             inputMode="decimal"
             placeholder={match.player2?.handicapIndex != null ? Number(match.player2.handicapIndex).toFixed(1) : "GHIN/current"}

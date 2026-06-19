@@ -26,6 +26,8 @@ const matchDetailsSchema = z.object({
   player2Id: nullableInt,
   player1HandicapIndex: nullableHandicap,
   player2HandicapIndex: nullableHandicap,
+  player1HandicapOverride: z.boolean(),
+  player2HandicapOverride: z.boolean(),
   scheduledAt: z.string().nullable(),
   location: nullableString,
   details: nullableString,
@@ -116,6 +118,8 @@ export async function updateMatchDetailsAction(input: z.infer<typeof matchDetail
         loserId: currentWinnerInvalid ? null : match.loserId,
         player1HandicapIndex,
         player2HandicapIndex,
+        player1HandicapOverride: data.player1HandicapOverride,
+        player2HandicapOverride: data.player2HandicapOverride,
         updatedAt: new Date(),
       })
       .where(eq(matches.id, data.matchId));
@@ -174,16 +178,18 @@ export async function setMatchWinnerAction(input: z.infer<typeof winnerSchema>) 
       await clearDownstreamResults(tx, match, match.winnerId);
     }
 
-    storedPlayer1HandicapIndex =
-      (match.player1Id ? refreshedHandicaps.get(match.player1Id) : null) ??
-      player1?.handicapIndex ??
-      match.player1HandicapIndex ??
-      null;
-    storedPlayer2HandicapIndex =
-      (match.player2Id ? refreshedHandicaps.get(match.player2Id) : null) ??
-      player2?.handicapIndex ??
-      match.player2HandicapIndex ??
-      null;
+    storedPlayer1HandicapIndex = match.player1HandicapOverride
+      ? match.player1HandicapIndex
+      : (match.player1Id ? refreshedHandicaps.get(match.player1Id) : null) ??
+        player1?.handicapIndex ??
+        match.player1HandicapIndex ??
+        null;
+    storedPlayer2HandicapIndex = match.player2HandicapOverride
+      ? match.player2HandicapIndex
+      : (match.player2Id ? refreshedHandicaps.get(match.player2Id) : null) ??
+        player2?.handicapIndex ??
+        match.player2HandicapIndex ??
+        null;
 
     await tx
       .update(matches)
